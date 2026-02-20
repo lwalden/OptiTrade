@@ -3,7 +3,7 @@
 > Claude reads this FIRST every session. When adding a session note, keep only the 3 most recent -- drop older ones (git history is the archive).
 
 **Phase:** 1 - Foundation
-**Last Updated:** 2026-02-19 17:01
+**Last Updated:** 2026-02-19 22:42
 
 ## Active Tasks
 - PR #1 (`feature/sprint-1.1-scaffold` → `main`) open and review-addressed — ready to merge

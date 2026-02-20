@@ -36,15 +36,16 @@ Enforced BEFORE any order is submitted.
 | Margin check | Order won't exceed 60% Reg-T / 40% PM | Query IBKR margin |
 
 **Example sizing calculation:**
-- Account NLV: $120,000
-- Max risk per trade: $120,000 × 2.5% = $3,000
+- Account NLV: $400,000
+- Max risk per trade: $400,000 × 2.5% = $10,000
 - SPX iron condor, $50 wide wings
 - Max risk per contract: $50 × 100 = $5,000 - credit received (~$3.00 × 100 = $300) = $4,700
-- Max contracts: floor($3,000 / $4,700) = 0 contracts — TOO RISKY for $50 wings at 2.5%
-- Solution: use $25 wings → max risk $2,200/contract → 1 contract
-- Or: use SPY ($5 wings) → max risk $350/contract → 8 contracts
+- Max contracts: floor($10,000 / $4,700) = **2 contracts** ✓ (fits cleanly within 2.5% limit)
+- Total risk at 2 contracts: $4,700 × 2 = $9,400 = 2.35% of NLV (within limit)
+- At $25 wings: max risk $2,200/contract → floor($10,000 / $2,200) = 4 contracts
+- SPY ($5 wings, ~$350/contract): floor($10,000 / $350) = 28 contracts
 
-**This is a critical insight: SPX $50-wide iron condors require either larger accounts or lower risk-per-trade limits. The system must size correctly.**
+**At $400K, SPX $50-wide iron condors are viable at 2 contracts per trade — a clean, practical sizing. This is one reason the $400K capital base was chosen. Below ~$200K NLV, SPX $50-wide condors require SPY substitution or reduced wing widths to fit within the 2.5% risk limit.**
 
 ### Level 2: Portfolio Risk (Continuous Monitoring)
 Enforced continuously during market hours.
@@ -69,10 +70,22 @@ Enforced on a rolling basis.
 
 **Daily -5% emergency close procedure:**
 1. System detects -5% NLV loss
-2. ALL open positions queued for immediate close
-3. Close orders submitted at market price (not limit — speed over price)
-4. Notification sent: email + SMS
-5. System enters LOCKDOWN state
+2. ALL open positions queued for immediate close — halt all new order submissions
+3. Close orders submitted as **aggressively pegged limit orders** — NEVER naked market orders:
+   - Start limit at current mid-price of the combo
+   - Step $0.25/leg toward the natural (worst) price every 15 seconds
+   - Full walk from mid to natural takes approximately 60-90 seconds
+   - **Why not market orders:** SPX 4-leg combos during market stress have $3-5 bid-ask
+     spreads per leg. A market order can fill $4-8/contract worse than an aggressively
+     pegged limit that fills within 60-90 seconds. Turning a -5% day into a -7% realized
+     loss due to market order slippage is avoidable.
+   - **Overnight gap exception:** If the market opens with positions already deep ITM
+     (gap scenario) and the aggressively pegged limit has NOT filled within 5 minutes
+     of market open, escalate to a market order. A gap open makes the pre-gap mid-price
+     stale — a limit pegged to yesterday's price will not execute, leaving you stuck in
+     a losing position while the market continues to move against you.
+4. Notification sent: email + SMS — include: which positions are being closed, estimated close prices
+5. System enters LOCKDOWN state — no new orders accepted
 6. Resume requires CLI command: `optimind unlock --confirm-review`
 7. User must acknowledge they've reviewed positions and understand the loss
 
@@ -90,6 +103,68 @@ These protect against scenarios that destroy accounts.
 
 ---
 
+## Data Integrity Layer
+
+**Position in data flow:** Between raw IBKR market data and the Risk Manager. All market data is validated BEFORE the risk manager processes it. Invalid data never influences risk decisions.
+
+### Why This Matters
+
+The risk manager makes decisions based on Greeks, prices, and P&L values from IBKR market data feeds. Bad data produces incorrect risk decisions:
+- **Stale Greeks:** IBKR data delay → delta = 0.00 looks like zero risk; actually means no data subscription
+- **Corrupted tick:** price = $0.001 or negative price → triggers spurious stop-loss logic
+- **Stale IV rank:** yesterday's IV rank → incorrect regime assessment → wrong strategy selection
+
+### Validation Rules
+
+| Field | Valid Range | Action on Violation |
+|---|---|---|
+| Option delta | -1.0 ≤ δ ≤ 1.0 | Reject tick, retain last known good value |
+| Option gamma | γ ≥ 0.0 | Reject tick, retain last known good value |
+| Option theta | θ ≤ 0.0 (short positions have positive P&L impact) | Reject tick, retain last known good value |
+| Option vega | ν ≥ 0.0 | Reject tick, retain last known good value |
+| Option price | > 0.0 and < 10× underlying price | Reject tick, retain last known good value |
+| Implied volatility | 0.01 ≤ IV ≤ 5.0 (1% to 500%) | Reject tick, retain last known good value |
+| Underlying price | > 0.0 | **Halt all risk checks for this underlying, alert immediately** |
+| Data timestamp | < 5 minutes old during market hours | Flag as STALE; alert user; use stale data with warning label |
+
+### Data Flow
+
+```
+IBKR Raw Tick → MarketDataValidator
+    ├── [valid] → Event Bus → Risk Manager (operates on clean data only)
+    └── [invalid] → Log violation with: field, received value, expected range, position_id
+                 → Retain last known good value for that field
+                 → Emit DATA_INTEGRITY_VIOLATION event
+                 → 3 consecutive violations for same field → alert user
+```
+
+### Key Implementation Note
+
+```python
+# data/market_data.py — validation before publishing to event bus
+class MarketDataValidator:
+    def validate_greeks(self, greeks: GreeksSnapshot) -> ValidationResult:
+        violations = []
+        if not (-1.0 <= greeks.delta <= 1.0):
+            violations.append(f"delta out of range: {greeks.delta}")
+        if greeks.gamma < 0:
+            violations.append(f"gamma negative: {greeks.gamma}")
+        if greeks.vega < 0:
+            violations.append(f"vega negative: {greeks.vega}")
+        if greeks.implied_vol is not None and not (0.01 <= greeks.implied_vol <= 5.0):
+            violations.append(f"IV out of range: {greeks.implied_vol}")
+        return ValidationResult(valid=len(violations) == 0, violations=violations)
+
+    def validate_staleness(self, timestamp: datetime) -> bool:
+        """Return True if data is fresh enough to trust."""
+        age = (datetime.utcnow() - timestamp).total_seconds()
+        return age < 300  # 5-minute threshold during market hours
+```
+
+The Risk Manager receives ONLY validated data. It never processes raw IBKR ticks directly.
+
+---
+
 ## Position Adjustment Rules
 
 ### When to Adjust
@@ -101,7 +176,7 @@ These protect against scenarios that destroy accounts.
 | Unrealized loss > 100% of credit | Consider closing |
 | DTE < 21 and position profitable | Tighten exit to 25% |
 | DTE < 14 regardless of P&L | Close position |
-| DTE < 7 (emergency) | Close immediately at market |
+| DTE < 7 (emergency) | Close immediately — use aggressively pegged limit (see emergency close procedure above) |
 
 ### How to Adjust
 1. **Roll the threatened side** (preferred)
@@ -216,3 +291,6 @@ The risk manager is safety-critical. Testing must be thorough.
 | Risk limit approaching (90% of any limit) | Email | Normal |
 | Margin call | Email + SMS | Critical |
 | System error (execution failure) | Email + SMS | Critical |
+| Data integrity violation (bad tick) | Email | High |
+| Data integrity violation (3 consecutive, same field) | Email + SMS | Critical |
+| Underlying price invalid (triggers halt) | Email + SMS | Emergency |
