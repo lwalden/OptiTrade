@@ -27,6 +27,7 @@ Source of truth for hard limits is `optimind/core/constants.py`.
 | Max positions per underlying | 2 |
 | Max sector positions | 3 |
 | Delta warn/limit | 7% / 10% of NLV |
+| Vega limit | 1.5% of NLV (enforced Phase 2+) |
 | Margin utilization limit | 60% Reg-T / 40% PM |
 | Daily loss halt | -3% |
 | Daily emergency close-all | -5% |

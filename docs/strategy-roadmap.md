@@ -16,6 +16,10 @@ Use `docs/PROJECT_STRATEGY.md` as the single authoritative roadmap.
 - `docs/PHASE_3_AI_LAYER.md`
 - `docs/PHASE_4_PRODUCTION.md`
 - `docs/VALIDATION_GATES.md`
+- `docs/GATE_OPERATIONS.md`
+- `docs/templates/GATE_ADR_TEMPLATES.md`
+- `docs/templates/GATE_SCOREBOARD_TEMPLATES.md`
+- `reports/gates/templates/`
 - `docs/PERFORMANCE_MODEL.md`
 - `docs/COST_MODEL.md`
 - `docs/BACKTEST_LIVE_PARITY.md`

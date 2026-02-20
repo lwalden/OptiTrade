@@ -75,8 +75,14 @@ Claude MUST ask human before:
 
 - `docs/PROJECT_STRATEGY.md` is canonical strategy/roadmap.
 - `docs/strategy-roadmap.md` is non-canonical pointer only.
-- Use `DECISIONS.md` for all significant architecture/process changes.
+- Use `DECISIONS.md` for all significant architecture/process changes. It is the durable record — if a session decision matters beyond the 3-note rolling window in `PROGRESS.md`, add an ADR before running `/handoff`.
 - Use `PROGRESS.md` for durable state and gate scoreboard.
+
+## Git and Branch Policy
+
+- Feature branches get auto-committed at session end (hook: `.claude/hooks/session-end-commit.js`).
+- `main` branch is intentionally excluded from auto-commit — changes on `main` must be committed manually by the human. This applies to docs-only changes as well.
+- Always do implementation work on a feature branch, not on `main`.
 
 ## Context Budget
 

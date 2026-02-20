@@ -61,95 +61,100 @@ Mode is controlled only by `OPTIMIND_MODE`.
 
 ## Project Structure
 
+Legend:
+- *(implemented)* — file exists with real code
+- *[stub]* — directory and `__init__.py` exist; module file not yet created
+- *[not yet created]* — file does not yet exist on disk; planned for the indicated sprint
+
 ```
 optimind/
-├── __main__.py                 # Entry point
+├── __main__.py                 # Entry point [stub]
 ├── config/
-│   ├── settings.py             # Pydantic settings (env vars, defaults)
-│   ├── strategies.yaml         # Strategy configurations [canonical param source]
-│   ├── risk_limits.yaml        # Risk parameters (non-hardcoded overrides)
-│   ├── watchlist.yaml          # Underlyings to monitor
-│   └── sectors.yaml            # Sector correlation mapping
+│   ├── settings.py             # Pydantic settings (env vars, defaults) (implemented)
+│   ├── strategies.yaml         # Strategy configurations [canonical param source] [not yet created — Sprint 1.0]
+│   ├── risk_limits.yaml        # Risk parameters (non-hardcoded overrides) [not yet created — Sprint 1.0]
+│   ├── watchlist.yaml          # Underlyings to monitor [not yet created — Sprint 1.0]
+│   └── sectors.yaml            # Sector correlation mapping [not yet created — Sprint 1.0]
 │
 ├── core/
-│   ├── models.py               # Pydantic data models (Position, TradeSetup, etc.)
-│   ├── events.py               # Event bus (pub/sub for system events) [stub]
-│   ├── database.py             # SQLAlchemy models and session management [stub]
-│   ├── logging.py              # Structured logging configuration [stub]
-│   └── constants.py            # Hard-coded limits (CANNOT be overridden by config)
+│   ├── models.py               # Pydantic data models (Position, TradeSetup, etc.) (implemented)
+│   ├── constants.py            # Hard-coded limits (CANNOT be overridden by config) (implemented)
+│   ├── events.py               # Event bus (pub/sub for system events) [not yet created — Sprint 2.1]
+│   ├── database.py             # SQLAlchemy models and session management [not yet created — Sprint 2.1]
+│   └── logging.py              # Structured logging configuration [not yet created — Sprint 1.1]
 │
 ├── broker/
-│   ├── base.py                 # Abstract BrokerAdapter interface [stub]
+│   ├── base.py                 # Abstract BrokerAdapter interface [not yet created — Sprint 2.1]
 │   ├── ibkr/
-│   │   ├── adapter.py          # IBKRAdapter implementation [stub]
-│   │   ├── connection.py       # IB Gateway connection management
-│   │   ├── orders.py           # Order construction (combo/BAG orders) [stub]
-│   │   └── data.py             # Market data retrieval [stub]
+│   │   ├── connection.py       # IB Gateway connection management (implemented)
+│   │   ├── adapter.py          # IBKRAdapter implementation [not yet created — Sprint 1.3]
+│   │   ├── orders.py           # Order construction (combo/BAG orders) [not yet created — Sprint 1.3]
+│   │   └── data.py             # Market data retrieval [not yet created — Sprint 1.2]
 │   └── tradier/
-│       └── adapter.py          # TradierAdapter (Phase 4) [stub]
+│       └── adapter.py          # TradierAdapter (Phase 4) [not yet created — Phase 4]
 │
 ├── data/
-│   ├── market_data.py          # Real-time market data manager [stub]
-│   ├── options_chain.py        # Options chain retrieval and filtering [stub]
-│   ├── greeks.py               # Greeks calculation (py_vollib + IBKR validation) [stub]
-│   ├── iv_surface.py           # IV rank, percentile, surface analysis [stub]
-│   └── orats.py                # ORATS data integration (Phase 3) [stub]
+│   ├── market_data.py          # Real-time market data manager [not yet created — Sprint 1.2]
+│   ├── options_chain.py        # Options chain retrieval and filtering [not yet created — Sprint 1.2]
+│   ├── greeks.py               # Greeks calculation (py_vollib + IBKR validation) [not yet created — Sprint 1.2]
+│   ├── iv_surface.py           # IV rank, percentile, surface analysis [not yet created — Sprint 1.2]
+│   └── orats.py                # ORATS data integration (Phase 3) [not yet created — Phase 3]
 │
 ├── strategies/
-│   ├── base.py                 # StrategyBase abstract class [stub]
-│   ├── registry.py             # Strategy registration and discovery [stub]
-│   ├── iron_condor.py          # Iron condor strategy [stub]
-│   ├── butterfly.py            # Butterfly spread strategy [stub]
-│   ├── credit_spread.py        # Bull put / bear call spreads [stub]
-│   ├── calendar_spread.py      # Calendar/horizontal spreads (Phase 3) [stub]
-│   └── straddle.py             # Pre-earnings straddle (Phase 3) [stub]
+│   ├── base.py                 # StrategyBase abstract class [not yet created — Sprint 2.1]
+│   ├── registry.py             # Strategy registration and discovery [not yet created — Sprint 2.1]
+│   ├── iron_condor.py          # Iron condor strategy [not yet created — Sprint 1.3]
+│   ├── butterfly.py            # Butterfly spread strategy [not yet created — Sprint 2.1]
+│   ├── credit_spread.py        # Bull put / bear call spreads [not yet created — Sprint 2.1]
+│   ├── calendar_spread.py      # Calendar/horizontal spreads (Phase 3) [not yet created — Phase 3]
+│   └── straddle.py             # Pre-earnings straddle (Phase 3) [not yet created — Phase 3]
 │
 ├── risk/
-│   ├── manager.py              # Pre-trade risk checks [stub]
-│   ├── portfolio_greeks.py     # Aggregate portfolio Greeks monitoring [stub]
-│   ├── circuit_breakers.py     # Daily/weekly/monthly loss limits [stub]
-│   ├── margin.py               # Margin utilization tracking [stub]
-│   └── correlation.py          # Sector correlation enforcement [stub]
+│   ├── manager.py              # Pre-trade risk checks [not yet created — Sprint 1.3]
+│   ├── portfolio_greeks.py     # Aggregate portfolio Greeks monitoring [not yet created — Sprint 2.2]
+│   ├── circuit_breakers.py     # Daily/weekly/monthly loss limits [not yet created — Sprint 2.2]
+│   ├── margin.py               # Margin utilization tracking [not yet created — Sprint 2.2]
+│   └── correlation.py          # Sector correlation enforcement [not yet created — Sprint 2.2]
 │
 ├── execution/
-│   ├── engine.py               # Order execution with SmartPricing [stub]
-│   ├── guided.py               # Guided execution mode (approve/reject) [stub]
-│   └── position_manager.py     # Position lifecycle management [stub]
+│   ├── engine.py               # Order execution with SmartPricing [not yet created — Sprint 1.3]
+│   ├── guided.py               # Guided execution mode (approve/reject) [not yet created — Sprint 2.4]
+│   └── position_manager.py     # Position lifecycle management [not yet created — Sprint 1.3]
 │
 ├── monitor/
-│   ├── position_monitor.py     # Real-time position P&L and Greeks tracking [stub]
-│   ├── threat_detector.py      # Adjustment trigger detection [stub]
-│   ├── adjustment_engine.py    # Rolling and transformation logic [stub]
-│   └── scheduler.py            # Time-based task scheduling [stub]
+│   ├── position_monitor.py     # Real-time position P&L and Greeks tracking [not yet created — Sprint 1.4]
+│   ├── threat_detector.py      # Adjustment trigger detection [not yet created — Sprint 2.3]
+│   ├── adjustment_engine.py    # Rolling and transformation logic [not yet created — Sprint 2.3]
+│   └── scheduler.py            # Time-based task scheduling [not yet created — Sprint 1.4]
 │
 ├── ai/
-│   ├── client.py               # Claude API client wrapper [stub]
-│   ├── regime.py               # Market regime detection (quant + AI) [stub]
-│   ├── trade_rationale.py      # Trade reasoning generation [stub]
-│   ├── portfolio_review.py     # AI portfolio assessment [stub]
-│   └── prompts/                # Prompt templates (Jinja2)
+│   ├── client.py               # Claude API client wrapper [not yet created — Phase 3]
+│   ├── regime.py               # Market regime detection (quant + AI) [not yet created — Phase 3]
+│   ├── trade_rationale.py      # Trade reasoning generation [not yet created — Phase 3]
+│   ├── portfolio_review.py     # AI portfolio assessment [not yet created — Phase 3]
+│   └── prompts/                # Prompt templates (Jinja2) [not yet created — Phase 3]
 │       ├── regime_analysis.j2
 │       ├── trade_rationale.j2
 │       ├── adjustment_reasoning.j2
 │       └── portfolio_review.j2
 │
 ├── mcp/
-│   ├── server.py               # MCP server main [stub]
-│   └── tools.py                # MCP tool definitions [stub]
+│   ├── server.py               # MCP server main [not yet created — Phase 3]
+│   └── tools.py                # MCP tool definitions [not yet created — Phase 3]
 │
 ├── dashboard/
-│   ├── app.py                  # Streamlit dashboard [stub]
-│   └── pages/                  # Dashboard pages [stub]
+│   ├── app.py                  # Streamlit dashboard [not yet created — Phase 2]
+│   └── pages/                  # Dashboard pages [not yet created — Phase 2]
 │
 ├── cli/
-│   ├── main.py                 # CLI entry point (Typer) [stub]
-│   └── commands/               # CLI command modules [stub]
+│   ├── main.py                 # CLI entry point (Typer) [not yet created — Sprint 1.4]
+│   └── commands/               # CLI command modules [not yet created — Sprint 1.4]
 │
 └── tax/
-    ├── lot_tracker.py          # Tax lot tracking [stub]
-    ├── section_1256.py         # Section 1256 60/40 treatment [stub]
-    ├── wash_sale.py            # Wash sale detection [stub]
-    └── reports.py              # Tax report generation [stub]
+    ├── lot_tracker.py          # Tax lot tracking [not yet created — Phase 2]
+    ├── section_1256.py         # Section 1256 60/40 treatment [not yet created — Phase 2]
+    ├── wash_sale.py            # Wash sale detection [not yet created — Phase 2]
+    └── reports.py              # Tax report generation [not yet created — Phase 2]
 ```
 
 Backtesting artifacts (separate from Python runtime):
@@ -157,14 +162,16 @@ Backtesting artifacts (separate from Python runtime):
 ```
 backtests/
 └── lean/
-    ├── Algorithm/              # C# LEAN strategy implementation
+    ├── Algorithm/              # C# LEAN strategy implementation [not yet created — Sprint 1.0]
     ├── Config/
-    │   └── StrategyConstants.cs  # Generated by config translator — do not edit manually
+    │   └── StrategyConstants.cs  # Generated by config translator — do not edit manually [not yet created — Sprint 1.0]
     ├── results/
-    │   └── phase1_baseline.json  # Backtest output consumed by gate acceptance
-    └── lean.json               # LEAN project config
+    │   └── phase1_baseline.json  # Backtest output consumed by gate acceptance [not yet created — Sprint 1.0]
+    └── lean.json               # LEAN project config [not yet created — Sprint 1.0]
 scripts/
-└── generate_lean_config.py    # Config translator: strategies.yaml → StrategyConstants.cs
+├── generate_lean_config.py    # Config translator: strategies.yaml → StrategyConstants.cs [not yet created — Sprint 1.0]
+├── evaluate_phase1_gate.py    # Gate evaluator: validates phase1_baseline.json against criteria [not yet created — Sprint 1.0]
+└── smoke_test_connection.py   # IBKR connection smoke test (implemented)
 ```
 
 ---
