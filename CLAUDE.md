@@ -29,7 +29,7 @@ Run `/handoff` to write a clear briefing for the next session. Hooks handle time
 **Project:** opti-trade
 **Description:** A fully custom, AI-enhanced options trading system implementing Optionetics-style delta-neutral strategies (iron condors, butterflies, calendar spreads, straddles/strangles) with an LLM-powered intelligence layer for market regime detection, trade reasoning, and adaptive strategy selection. Trades on Interactive Brokers with paper/live toggle; targets 8-15% annual returns on $100K-$150K capital.
 **Type:** other (algorithmic trading system)
-**Stack:** Python 3.12+ / ib_async / SQLAlchemy / Pydantic / pandas / py_vollib / Claude API / YAML config
+**Stack:** Python 3.12+ / uv / ib_async / SQLAlchemy / Pydantic / pandas / py_vollib / Claude API / YAML config
 **MCP Servers:** None currently active (available: Azure, Postman, Firecrawl, Hugging Face, GitHub, Miro, Microsoft Learn — start on demand)
 
 **Developer Profile:**
@@ -39,7 +39,13 @@ Run `/handoff` to write a clear briefing for the next session. Hooks handle time
 
 ## MVP Goals
 
-<!-- Populated by /plan with Phase 1 deliverables -->
+Phase 1 deliverables (Weeks 1–8, paper mode only):
+- IBKR connects via ib_async, paper/live toggle works via `OPTIMIND_MODE` env var
+- Options chains retrieved for SPX/SPY/QQQ/IWM; Greeks within 5% of IBKR-provided values; IV rank from 52-week history
+- Iron condor constructed and executed as 4-leg BAG combo with SmartPricing
+- Position auto-exits at 50% profit target, 200% stop loss, and DTE thresholds (21/14/7)
+- CLI functional (`status`, `scan`, `trade`, `close`, `mode`, `history`)
+- One complete iron condor lifecycle (open → monitor → close) documented in paper mode
 
 ## Behavioral Rules
 

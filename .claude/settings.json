@@ -1,5 +1,10 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(uv pip install:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run python:*)"
+    ],
     "deny": [
       "Bash(rm -rf /:*)",
       "Bash(rm -rf ~:*)",
@@ -11,6 +16,9 @@
       "Bash(git reset --hard origin:*)",
       "Bash(git clean -fd:*)",
       "Bash(chmod -R 777:*)"
+    ],
+    "additionalDirectories": [
+      "d:\\Source\\OptiTrade\\optimind\\{config,core,broker\\ibkr,broker\\tradier,data,strategies,risk,execution,monitor,ai\\prompts,mcp,dashboard\\pages,cli"
     ]
   },
   "hooks": {
