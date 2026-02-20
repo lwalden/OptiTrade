@@ -56,6 +56,7 @@ Run `/handoff` to write a clear briefing for the next session. Hooks handle time
 
 ## Documentation Rules
 
+- CLAUDE.md target is ~65 lines. See `docs/PROJECT_STRATEGY.md` §Context Budget before adding content here.
 - `docs/PROJECT_STRATEGY.md` is canonical strategy/roadmap.
 - `docs/strategy-roadmap.md` is non-canonical pointer only.
 - Use `DECISIONS.md` for all significant architecture/process changes. It is the durable record — if a session decision matters beyond the 3-note rolling window in `PROGRESS.md`, add an ADR before running `/handoff`.
