@@ -105,6 +105,34 @@ optimind/
 
 ---
 
+## Market Data Layer: Critical Rules
+
+### IBKR API Pacing
+IBKR enforces a 50 message/second rate limit. Exceeding it causes disconnection. The market data layer must:
+- Throttle all `reqMktData` and `reqHistoricalData` calls to **40 messages/second** (20% safety margin)
+- Batch options chain requests: retrieve all strikes for one expiry before moving to the next
+- Implement exponential backoff on `PACING_VIOLATION` errors received from IBKR
+- Use a semaphore with max **10 concurrent market data subscriptions** — never make unbounded concurrent requests
+- Log pacing near-misses (>35 msg/sec) for monitoring
+
+### Data Caching (mandatory)
+Market data is cached to minimize API calls and provide resilience against connectivity gaps:
+
+| Data | Cache TTL | Rationale |
+|---|---|---|
+| Options chain snapshots | 60 seconds | Chain data doesn't change tick-by-tick; constant re-fetch wastes pacing budget |
+| IV rank per underlying | 1 hour | IV rank is a slow-moving daily metric; recalculating every minute is wasteful |
+| Historical volatility data (for IV rank) | 24 hours | Historical data does not change intraday |
+| Position Greeks (open positions) | Never cache | Always use live tick data — stale Greeks cause incorrect risk decisions |
+| Underlying price (for risk checks) | 5 seconds max | Short cache acceptable; Greeks validation needs recent underlying price |
+
+Cache implementation: in-memory dict with TTL tracking for Phase 1-3; SQLite-backed for Phase 4 production (survives process restarts).
+
+### Data Integrity Validation
+All market data passes through `MarketDataValidator` before entering the event bus. No raw IBKR tick data reaches the Risk Manager directly. See RISK_FRAMEWORK.md — Data Integrity Layer for full validation rules and field-level bounds.
+
+---
+
 ## Data Models (core/models.py)
 
 ```python
@@ -252,22 +280,54 @@ POSITION_CLOSED → Performance Tracker, Tax Lot Tracker, Trade Journal
 ```
 Twice daily (10:15 AM, 2:00 PM ET):
 
-Market Context Collector → gathers all data points
+Market Context Collector → gathers all data points (via MarketDataValidator)
   → VIX, term structure, IV ranks, sector performance, etc.
   → publishes MARKET_DATA_UPDATED
 
-Regime Engine (Quantitative) → applies rule-based classification
-  → produces regime_quantitative
+Regime Engine (Quantitative) → applies rule-based classification  [ALWAYS runs first]
+  → produces regime_quantitative  ← this is the safety-net baseline
 
-Regime Engine (AI) → formats MarketContext as structured snapshot
-  → sends to Claude API with regime analysis prompt
-  → receives structured regime assessment
-  → produces regime_ai
+Regime Engine (AI) → wraps Claude API call in asyncio.wait_for(timeout=5.0):
 
-If regime changed → publishes REGIME_CHANGED
+  [SUCCESS within 5s]:
+    → formats MarketContext as structured snapshot
+    → sends to Claude API with regime analysis prompt
+    → parses structured JSON response
+    → produces regime_ai
+    → operative_regime = regime_ai (AI result used when available)
+
+  [TIMEOUT (>5 seconds) or API error]:
+    → logs: "AI regime assessment unavailable"
+    → regime_ai = None
+    → Check: is there a prior successful AI assessment < 2 hours old?
+        [YES — recent AI result available]:
+          → operative_regime = last_successful_regime_ai  (regime persistence)
+          → logs: "Using cached AI regime from {timestamp} — {regime}"
+          → emits: AI_CACHE_USED event
+        [NO — no recent AI result]:
+          → operative_regime = regime_quantitative
+          → logs: "No recent AI regime available — using quantitative baseline"
+          → emits: AI_FALLBACK_TRIGGERED event (for monitoring dashboards)
+    → system continues operating normally — AI failure is NON-FATAL
+
+  [Response received but invalid JSON / schema mismatch]:
+    → logs raw response for debugging
+    → same fallback path as timeout above
+    → emits: AI_FALLBACK_TRIGGERED event
+
+If operative_regime changed (vs previous period) → publishes REGIME_CHANGED
   → Strategy Weighting Engine adjusts allocation percentages
   → Scanner uses new weights for next scan
 ```
+
+**Design principle:** The quantitative regime detector is NOT a backup — it is the permanent safety net. The AI layer enhances the assessment when available. The system must operate identically whether Claude responds in 1 second or is unreachable for hours. Any exception from the Anthropic SDK (APIError, AuthenticationError, RateLimitError) must be caught in `ai/client.py` and must not propagate to the main trading loop.
+
+**Regime persistence (graceful degradation ladder):**
+1. Fresh AI response (< 5s, valid JSON) → use `regime_ai` directly
+2. AI timeout/error, but prior successful AI assessment < 2 hours old → use cached `regime_ai` (regime persistence — a brief API blip should not flip strategy weights)
+3. No recent AI assessment → use `regime_quantitative` (pure rules-based baseline)
+
+The 2-hour window reflects the twice-daily (10:15 AM, 2:00 PM) assessment cadence. A timeout on the 10:15 AM call still has the 2:00 PM prior-day result available. A timeout on both intraday calls falls through to quantitative.
 
 ---
 
@@ -475,10 +535,18 @@ Dashboard:
 
 Infrastructure:
   apscheduler (task scheduling)
-  click or typer (CLI framework)
+  typer (CLI framework — chosen over click)
   structlog (structured logging)
   exchange_calendars (market holiday handling)
   python-dotenv (env var management)
+  aiosqlite >= 0.20 [REQUIRED — async SQLite driver; never use synchronous SQLite in async context]
+
+Backtesting (Sprint 1.0 — separate from Python runtime, in backtests/lean/):
+  QuantConnect LEAN (C# native algorithm engine)
+  .NET SDK (C# compilation)
+  LEAN CLI (pip install lean — Python orchestration tool for LEAN)
+  scripts/generate_lean_config.py (Build-Time Config Translator: reads config/strategies.yaml,
+    writes backtests/lean/Config/StrategyConstants.cs — prevents configuration drift)
 
 Testing:
   pytest, pytest-asyncio
@@ -525,6 +593,46 @@ Access:
   MCP Server: SSH tunnel for Claude Desktop connection
   Emergency access: SSH to VM for manual intervention
 ```
+
+---
+
+## Networking & Localization
+
+### Why Region Matters for Options Execution
+
+IBKR's options execution infrastructure is co-located in **Secaucus, NJ** (IBKR's primary data center). Round-trip latency from the trading process to IBKR directly affects fill quality on SmartPricing walks — each $0.05 adjustment step waits for an acknowledgment before submitting the next one.
+
+| Deployment Location | RTT to IBKR Secaucus NJ | Impact |
+|---|---|---|
+| Local dev (Kirkland, WA) | ~70-90ms | Acceptable for paper trading (Phases 1-3) |
+| Azure West US 2 (Washington) | ~65-75ms | No meaningful improvement over local |
+| **Azure East US (Virginia)** | **~5-12ms** | **Required for production** |
+| Azure East US 2 (Virginia) | ~8-15ms | Acceptable fallback |
+
+### Production Region: Azure East US (Virginia)
+
+**Required region for the production VM (Phase 4 go-live).**
+
+- 5-12ms RTT vs IBKR Secaucus NJ — approximately 10x improvement over local WA dev
+- Reduces per-step SmartPricing latency from ~80ms to ~10ms (meaningful for 60-second walk windows)
+- Azure East US is IBKR's nearest Azure region; co-location is the single biggest latency lever
+- All Azure resources (VM, PostgreSQL, Blob Storage, Monitor) in East US to minimize inter-region transfer costs and latency
+
+### Local Development Exception
+
+During Phases 1-3 (paper trading only), the ~80ms local WA latency is **acceptable**:
+- Paper fills are simulated; IBKR does not fill paper orders at the speed of live markets
+- SmartPricing latency is not a correctness issue during paper trading — it only affects whether you get better mid-price fills in live trading
+- No financial risk from latency during paper phases; optimize for developer ergonomics
+
+**Transition rule:** Switch from local → Azure East US VM before switching `OPTIMIND_MODE=live`. Do not run live trading from a home internet connection.
+
+### IBKR Gateway Network Requirements
+
+- IB Gateway must run on the **same host** as OptiMind (loopback connection: `127.0.0.1:4001/4002`)
+- IB Gateway cannot be exposed over the public internet; use SSH tunnel if debugging remotely
+- IBC (IB Controller) manages auto-login and restart of IB Gateway on the Azure VM
+- Outbound ports required: 4001 (live) / 4002 (paper) on localhost; IBKR requires outbound 443 for its own connections
 
 ---
 

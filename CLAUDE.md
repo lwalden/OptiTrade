@@ -27,7 +27,7 @@ Run `/handoff` to write a clear briefing for the next session. Hooks handle time
 ## Project Identity
 
 **Project:** opti-trade
-**Description:** A fully custom, AI-enhanced options trading system implementing Optionetics-style delta-neutral strategies (iron condors, butterflies, calendar spreads, straddles/strangles) with an LLM-powered intelligence layer for market regime detection, trade reasoning, and adaptive strategy selection. Trades on Interactive Brokers with paper/live toggle; targets 8-15% annual returns on $100K-$150K capital.
+**Description:** A fully custom, AI-enhanced options trading system implementing Optionetics-style delta-neutral strategies (iron condors, butterflies, calendar spreads, straddles/strangles) with an LLM-powered intelligence layer for market regime detection, trade reasoning, and adaptive strategy selection. Trades on Interactive Brokers with paper/live toggle; targets 8-15% annual returns on $400K capital.
 **Type:** other (algorithmic trading system)
 **Stack:** Python 3.12+ / uv / ib_async / SQLAlchemy / Pydantic / pandas / py_vollib / Claude API / YAML config
 **MCP Servers:** None currently active (available: Azure, Postman, Firecrawl, Hugging Face, GitHub, Miro, Microsoft Learn — start on demand)
