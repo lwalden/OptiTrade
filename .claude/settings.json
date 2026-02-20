@@ -5,7 +5,8 @@
       "Bash(uv run pytest:*)",
       "Bash(uv run python:*)",
       "Bash(gh pr view:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(ls:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",

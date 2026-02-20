@@ -83,3 +83,15 @@ TWS/
 data/cache/
 *.parquet
 *.feather
+
+# ==============================================================================
+# Gate reports and backtest artifacts
+# ==============================================================================
+# Gate report JSONs (reports/gates/*.json) ARE tracked -- they are evidence
+# artifacts required for phase advancement. Do not ignore them.
+#
+# Large LEAN backtest raw output (e.g. equity curves, trade logs) should NOT
+# be committed. Only the distilled summary JSON goes into backtests/lean/results/.
+backtests/lean/raw/
+backtests/lean/**/*.csv
+backtests/lean/**/*.zip
