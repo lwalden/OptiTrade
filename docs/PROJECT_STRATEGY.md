@@ -131,3 +131,16 @@ Required:
 | `docs/RISK_FRAMEWORK.md` | Full risk policies and safety procedures |
 | `docs/ARCHITECTURE.md` | Module and deployment architecture |
 | `docs/strategy-roadmap.md` | Non-canonical pointer/index file |
+
+## Context Budget
+
+| File | Target Size | Action if Exceeded |
+|---|---|---|
+| `CLAUDE.md` | ~65 lines | Don't add without removing something |
+| `PROGRESS.md` | ~20 lines active | Self-trimming: only 3 session notes kept |
+| `DECISIONS.md` | Grows over time | Delete superseded entries (git history preserves them) |
+
+**Reading strategy:**
+- `PROGRESS.md`: every session (auto-injected by hook)
+- `DECISIONS.md`: auto-injected if decisions exist; always check before architectural choices
+- Phase and architecture docs: on-demand
