@@ -19,25 +19,6 @@
       "Bash(git reset --hard origin:*)",
       "Bash(git clean -fd:*)",
       "Bash(chmod -R 777:*)"
-    ],
-    "additionalDirectories": [
-      "d:\\Source\\OptiTrade\\optimind\\config",
-      "d:\\Source\\OptiTrade\\optimind\\core",
-      "d:\\Source\\OptiTrade\\optimind\\broker\\ibkr",
-      "d:\\Source\\OptiTrade\\optimind\\broker\\tradier",
-      "d:\\Source\\OptiTrade\\optimind\\data",
-      "d:\\Source\\OptiTrade\\optimind\\strategies",
-      "d:\\Source\\OptiTrade\\optimind\\risk",
-      "d:\\Source\\OptiTrade\\optimind\\execution",
-      "d:\\Source\\OptiTrade\\optimind\\monitor",
-      "d:\\Source\\OptiTrade\\optimind\\ai\\prompts",
-      "d:\\Source\\OptiTrade\\optimind\\mcp",
-      "d:\\Source\\OptiTrade\\optimind\\dashboard\\pages",
-      "d:\\Source\\OptiTrade\\optimind\\cli",
-      "d:\\Source\\OptiTrade\\tests",
-      "d:\\Source\\OptiTrade\\scripts",
-      "d:\\Source\\OptiTrade\\backtests",
-      "d:\\Source\\OptiTrade\\reports"
     ]
   },
   "hooks": {
