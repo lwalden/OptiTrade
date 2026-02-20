@@ -15,23 +15,40 @@ If no context is injected, read files manually in this order.
 
 ## Session Protocol
 
-### Start
+### Starting a Session
+1. Read `PROGRESS.md` -- understand current state, active tasks, and priorities
+2. Check `git status` for uncommitted work
+3. Resume from "Next Priorities" in PROGRESS.md
 
-1. Read `PROGRESS.md` including gate scoreboard.
-2. Run `git status`.
-3. Resume from `Next Priorities`.
+> If no session context was injected above (you don't see PROGRESS.md content), read PROGRESS.md and DECISIONS.md manually before proceeding.
 
-### During
+### During a Session
+- Write code to files immediately -- don't accumulate changes in memory
+- Commit at natural checkpoints (compiles, tests pass, logical unit complete)
+- Prefer smaller, frequent commits over one large commit
+- Use Claude's native Tasks for complex multi-step work; keep PROGRESS.md as the durable record
 
-- Write changes directly to files.
-- Keep work in small, verifiable checkpoints.
-- Run tests before commit when tests exist.
-- Update docs whenever behavior changes.
+### Ending a Session
+Run `/handoff` to write a clear briefing for the next session. Hooks handle timestamp and auto-commit automatically.
 
-### End
+## Behavioral Rules
 
-- Run `/handoff`.
-- Ensure `PROGRESS.md` and gate scoreboard reflect the new state.
+### Git Workflow
+- **Never commit directly to main** -- always use feature branches
+- Branch naming: `feature/short-description`, `fix/short-description`, `chore/short-description`
+- All changes via PR. Claude creates PRs; human reviews and merges
+
+### Credentials
+- Never store credentials in code. Use `.env` files (gitignored).
+
+### Autonomy Boundaries
+**You CAN autonomously:** Create files, install packages, run builds/tests, create branches and PRs, scaffold code
+**Ask the human first:** Create GitHub repos, merge PRs, sign up for services, provide API keys, approve major architectural changes
+
+### Verification-First Development
+- Confirm requirements before implementing
+- Write tests appropriate to the project's quality tier (see strategy-roadmap.md)
+- When Standard tier or above: write failing tests first, then implement
 
 ## Canonical Project Identity
 
@@ -86,8 +103,13 @@ Claude MUST ask human before:
 
 ## Context Budget
 
-| File | Target Size | Rule |
-|---|---|---|
-| `CLAUDE.md` | short | Keep only operating rules and canonical facts |
-| `PROGRESS.md` | short | Keep current state + gate scoreboard + top priorities |
-| `DECISIONS.md` | medium | Keep active and superseded ADRs explicit |
+| File | Target Size | Action if Exceeded |
+|------|------------|-------------------|
+| CLAUDE.md | ~75 lines | Don't add without removing something |
+| PROGRESS.md | ~20 lines active | Self-trimming: only 3 session notes kept |
+| DECISIONS.md | Grows over time | Delete superseded entries (git history preserves them) |
+
+**Reading Strategy:**
+- PROGRESS.md: Every session (auto-injected by hook)
+- DECISIONS.md: Auto-injected if decisions exist; always check before architectural choices
+- strategy-roadmap.md: On-demand

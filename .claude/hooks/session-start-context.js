@@ -51,8 +51,8 @@ if (fs.existsSync(progressFile)) {
 if (fs.existsSync(decisionsFile)) {
   const content = fs.readFileSync(decisionsFile, "utf8");
   const lines = content.split("\n").filter((l) => l.trim().length > 0);
-  // Inject if there are actual decisions — threshold: any "## ADR-" heading = a decision exists
-  const hasDecisions = lines.some((l) => /^## ADR-/.test(l));
+  // Inject if there are actual decisions — threshold: any ### heading = a decision exists
+  const hasDecisions = lines.some((l) => /^### /.test(l));
   if (hasDecisions) {
     console.log("\n--- DECISIONS.md (architectural decisions — do not re-debate) ---");
     console.log(content);
