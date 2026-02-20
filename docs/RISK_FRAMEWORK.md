@@ -47,6 +47,8 @@ Enforced BEFORE any order is submitted.
 
 **At $400K, SPX $50-wide iron condors are viable at 2 contracts per trade — a clean, practical sizing. This is one reason the $400K capital base was chosen. Below ~$200K NLV, SPX $50-wide condors require SPY substitution or reduced wing widths to fit within the 2.5% risk limit.**
 
+**Portfolio Margin (PM) vs Reg-T at $400K:** With a $400K account and PM approval, the margin requirement for an SPX iron condor is substantially lower than Reg-T. Under Reg-T, margin is roughly the spread width ($50 × 100 = $5,000/contract). Under PM, IBKR calculates margin using a stress-test model — typically $1,500-$2,500/contract for SPX iron condors depending on strikes and IV. This means PM roughly doubles your effective deployment capacity. The system must query IBKR's actual margin requirement via `reqWhatIfOrder()` and use the real PM margin figure, not a Reg-T estimate. **The 40% max deployed capital limit applies to actual margin used, not notional spread width.** At $400K with PM, max deployed = $160,000 in margin — this can support more concurrent positions than a naive Reg-T calculation suggests.
+
 ### Level 2: Portfolio Risk (Continuous Monitoring)
 Enforced continuously during market hours.
 
@@ -126,6 +128,7 @@ The risk manager makes decisions based on Greeks, prices, and P&L values from IB
 | Implied volatility | 0.01 ≤ IV ≤ 5.0 (1% to 500%) | Reject tick, retain last known good value |
 | Underlying price | > 0.0 | **Halt all risk checks for this underlying, alert immediately** |
 | Data timestamp | < 5 minutes old during market hours | Flag as STALE; alert user; use stale data with warning label |
+| **Per-leg timestamp (combo positions)** | Each leg's quote timestamp within 30 seconds of the others | Flag combo Greeks as INCONSISTENT; do not aggregate across legs with mismatched timestamps |
 
 ### Data Flow
 
@@ -162,6 +165,8 @@ class MarketDataValidator:
 ```
 
 The Risk Manager receives ONLY validated data. It never processes raw IBKR ticks directly.
+
+**Critical nuance — per-leg staleness in combo positions:** The most dangerous data in a multi-leg position is not obviously "bad" (0.0 or 9999.9) but **stale-yet-plausible**. During fast markets, IBKR can stop sending updates for one leg of a 4-leg combo while the others continue streaming. The resulting aggregate Greeks will appear numerically valid but be 30-60 seconds stale for that leg. The `MarketDataValidator` must check that all legs of a combo have quote timestamps within 30 seconds of each other before computing aggregate portfolio Greeks. If timestamps diverge, mark the combo's Greeks as `INCONSISTENT` and use the last fully-consistent snapshot rather than aggregating mismatched timestamps.
 
 ---
 
