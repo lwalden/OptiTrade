@@ -62,6 +62,7 @@ Hard limits are implemented in `optimind/core/constants.py`.
 | Weekly loss limit | -5% of NLV |
 | Monthly loss limit | -10% of NLV |
 | Portfolio delta warn/limit | 7% / 10% of NLV |
+| Portfolio vega limit | 1.5% of NLV (enforced Phase 2+) |
 | Max margin utilization | 60% Reg-T / 40% PM |
 | Max adjustments per position | 2 |
 
@@ -121,8 +122,25 @@ Required:
 | `docs/PHASE_3_AI_LAYER.md` | Phase 3 plan |
 | `docs/PHASE_4_PRODUCTION.md` | Phase 4 plan |
 | `docs/VALIDATION_GATES.md` | Hard pass/fail gates |
+| `docs/GATE_OPERATIONS.md` | Step-by-step operator workflow for gate updates |
+| `docs/templates/GATE_ADR_TEMPLATES.md` | Paste-ready ADR templates for gate passage |
+| `docs/templates/GATE_SCOREBOARD_TEMPLATES.md` | Paste-ready `PROGRESS.md` scoreboard row templates |
 | `docs/PERFORMANCE_MODEL.md` | Return/volatility estimation method |
 | `docs/COST_MODEL.md` | Operating cost scenarios and ROI |
 | `docs/BACKTEST_LIVE_PARITY.md` | Backtest/runtime parity controls |
 | `docs/RISK_FRAMEWORK.md` | Full risk policies and safety procedures |
 | `docs/ARCHITECTURE.md` | Module and deployment architecture |
+| `docs/strategy-roadmap.md` | Non-canonical pointer/index file |
+
+## Context Budget
+
+| File | Target Size | Action if Exceeded |
+|---|---|---|
+| `CLAUDE.md` | ~65 lines | Don't add without removing something |
+| `PROGRESS.md` | ~20 lines active | Self-trimming: only 3 session notes kept |
+| `DECISIONS.md` | Grows over time | Delete superseded entries (git history preserves them) |
+
+**Reading strategy:**
+- `PROGRESS.md`: every session (auto-injected by hook)
+- `DECISIONS.md`: auto-injected if decisions exist; always check before architectural choices
+- Phase and architecture docs: on-demand

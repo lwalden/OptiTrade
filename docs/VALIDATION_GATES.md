@@ -40,13 +40,21 @@ Fail condition (hard stop):
 
 - If Phase 1 fails gates 1 or 2, stop execution-engine expansion and redesign strategy parameters before continuing.
 
+## Defect Severity Definitions
+
+For gate evaluation purposes, defect severity is defined as follows:
+
+- **P0 (Critical):** Any defect that could cause incorrect order execution, a hard risk-limit bypass, incorrect position state, incorrect P&L accounting, or uncontrolled live capital exposure. P0 defects block gate passage and must be resolved before the gate can be evaluated.
+- **P1 (High):** Defects that degrade system reliability or observability but do not cause unsafe behavior (e.g., non-critical monitoring gaps, non-blocking CLI errors). Must be tracked but do not block gate passage.
+- **P2 (Medium/Low):** Cosmetic, UX, or non-safety-impacting issues. Tracked in issue log but no gate impact.
+
 ## Phase 2 Gate (Execution and Risk Control)
 
 Required evidence:
 
 1. Continuous paper operation for >= 4 weeks.
 2. Zero hard risk-limit violations.
-3. No unresolved critical defects in risk checks, order routing, or position state transitions.
+3. No unresolved P0 defects in risk checks, order routing, or position state transitions.
 4. Risk telemetry complete:
    - Daily/weekly/monthly loss tracking.
    - Portfolio delta tracking (warn at 7%, limit at 10% of NLV).

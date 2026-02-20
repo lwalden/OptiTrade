@@ -24,12 +24,23 @@ Validate core strategy viability before scaling implementation complexity, then 
 
 ---
 
-## Sprint 1.0 (Weeks 1-2): LEAN Backtest Viability
+## Execution Order Note
+
+Sprint 1.1 (runtime scaffold) was implemented before Sprint 1.0 (LEAN backtest). This order was intentional: understanding the Python package structure and IBKR connection behavior first reduced risk of misaligned assumptions in the backtest. The sprint numbers reflect dependency priority (LEAN viability is the strategic prerequisite), not the order of implementation. See `DECISIONS.md` ADR-015.
+
+---
+
+## Sprint 1.0 (Weeks 1-2 planned; implemented after Sprint 1.1): LEAN Backtest Viability
 
 ### Deliverables
 
-- `backtests/lean/` C# baseline strategy implementation.
-- Config translator from `config/strategies.yaml` to LEAN constants.
+- `optimind/config/strategies.yaml` — canonical strategy parameter source (required before LEAN work begins).
+- `optimind/config/risk_limits.yaml` — non-hardcoded risk parameter overrides.
+- `optimind/config/watchlist.yaml` — underlyings to monitor.
+- `optimind/config/sectors.yaml` — sector correlation mapping.
+- `scripts/generate_lean_config.py` — config translator: reads `strategies.yaml`, emits `backtests/lean/Config/StrategyConstants.cs`.
+- `scripts/evaluate_phase1_gate.py` — gate evaluator: validates `phase1_baseline.json` against all Phase 1 gate criteria and prints pass/fail.
+- `backtests/lean/` C# baseline strategy implementation (Algorithm/, Config/, lean.json).
 - Baseline backtest metrics for 2019-2025.
 - In-sample vs out-of-sample sensitivity summary.
 

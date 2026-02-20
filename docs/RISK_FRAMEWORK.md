@@ -27,6 +27,7 @@ Source of truth for hard limits is `optimind/core/constants.py`.
 | Max positions per underlying | 2 |
 | Max sector positions | 3 |
 | Delta warn/limit | 7% / 10% of NLV |
+| Vega limit | 1.5% of NLV (enforced Phase 2+) |
 | Margin utilization limit | 60% Reg-T / 40% PM |
 | Daily loss halt | -3% |
 | Daily emergency close-all | -5% |
@@ -48,7 +49,7 @@ All checks must pass before order submission:
 
 ## Layer 2: Continuous portfolio monitoring
 
-During market hours:
+During market hours (9:30 AM – 4:00 PM ET; 4:15 PM for SPX positions):
 
 - aggregate Greeks,
 - realized + unrealized PnL,
