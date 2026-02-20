@@ -8,7 +8,7 @@
 
 ## What & Why
 
-**Vision:** A fully custom, AI-enhanced options trading system implementing Optionetics-style delta-neutral strategies (iron condors, butterflies, calendar spreads, straddles/strangles) with an LLM-powered intelligence layer for market regime detection, trade reasoning, and adaptive strategy selection. Trades on Interactive Brokers with a paper/live toggle. Targets **8–15% annual returns** on $100K–$150K deployed capital at half-market volatility.
+**Vision:** A fully custom, AI-enhanced options trading system implementing Optionetics-style delta-neutral strategies (iron condors, butterflies, calendar spreads, straddles/strangles) with an LLM-powered intelligence layer for market regime detection, trade reasoning, and adaptive strategy selection. Trades on Interactive Brokers with a paper/live toggle. Targets **8–15% annual returns** on $400K deployed capital at half-market volatility.
 
 **Target Users:** Solo developer/operator (Laurance). Single user, high personal financial impact.
 

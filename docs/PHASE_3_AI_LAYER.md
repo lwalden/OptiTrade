@@ -92,10 +92,25 @@
 ```
 3.2.1  Build Claude API client module
        - Anthropic Python SDK integration
-       - Model: claude-sonnet-4-5 (cost-effective for frequent calls)
+       - Model: claude-sonnet-4-6 (cost-effective for frequent calls)
        - Structured output parsing (JSON mode)
        - Token usage tracking and cost logging
-       - Rate limiting and retry logic
+       - **Strict timeouts on ALL Claude API calls** (using `asyncio.wait_for`):
+           * Regime assessment calls: 5-second timeout
+           * Trade rationale calls: 5-second timeout
+           * Adjustment reasoning calls: 5-second timeout
+           * Portfolio review calls: 10-second timeout (weekly, more data, less time-critical)
+           * On timeout: log warning with elapsed time; return None; caller uses quantitative fallback
+       - **Retry logic:**
+           * Retry ONLY on HTTP 529 (overloaded): exponential backoff 1s → 2s → 4s, max 2 retries
+           * Do NOT retry on timeout — a slow response arriving late is useless for time-sensitive
+             10:15 AM regime assessment; accept the fallback and move on
+           * Do NOT retry on 4xx errors (bad request, invalid key) — these require human action
+       - **Defensive exception handling:**
+           * ALL Anthropic SDK exceptions (APIError, AuthenticationError, APIConnectionError,
+             RateLimitError, APIStatusError) must be caught in `ai/client.py`
+           * None of these may propagate to the main trading loop
+           * On any exception: log full traceback, return None, caller uses quantitative fallback
        - Budget cap: $50/mo initial, alert at $30
 
 3.2.2  Build regime analysis prompt system
@@ -314,7 +329,9 @@
 |---|---|---|---|
 | Claude API costs exceed budget | Medium | Low | claude-sonnet-4-5 is cheap; 2 calls/day + adjustments ≈ $20-30/mo; hard budget cap |
 | AI regime detection doesn't outperform static | Medium | Medium | This is why we measure — if AI doesn't help, simplify. No ego about it. |
-| LLM hallucination produces bad trade recommendation | Low | Medium | AI recommends, risk manager enforces limits. LLM cannot bypass hard limits. |
+| LLM hallucination produces bad trade recommendation | Low | Medium | AI recommends, risk manager enforces hard limits from `constants.py`. LLM cannot bypass pre-trade checks. Additionally: if AI returns invalid JSON structure, client returns None and system uses quantitative fallback. |
+| Claude API timeout or outage | Medium | Low | 5-second timeout fires; system automatically falls back to quantitative regime. AI failure is non-fatal by design. Emit `AI_FALLBACK_TRIGGERED` event for monitoring. |
+| AI non-determinism produces inconsistent regime flipping | Low | Low | System logs both `regime_quantitative` and `regime_ai`. Quantitative baseline provides stability even if AI oscillates. Only `REGIME_CHANGED` events trigger strategy weight adjustments, dampening noise. |
 | Calendar spreads/straddles add complexity without proportional returns | Medium | Low | Track per-strategy metrics; disable underperformers |
 | MCP server security — portfolio data exposure | Low | High | MCP runs locally only; no network exposure; env var for mode control |
 | ORATS data feed issues | Low | Medium | Cache last known data; fall back to IBKR-derived IV if ORATS unavailable |
