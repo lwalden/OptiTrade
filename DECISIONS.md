@@ -109,3 +109,10 @@ Record significant decisions to prevent re-debating and documentation drift.
 **Decision:** ROI reporting must use low/base/high cost scenarios from `docs/COST_MODEL.md`.
 **Rationale:** avoids optimistic single-point estimates.
 **Alternatives:** single monthly cost number.
+
+## ADR-015: Sprint 1.1 implemented before Sprint 1.0
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** Implement Sprint 1.1 (Python scaffold and IBKR connection) before Sprint 1.0 (LEAN backtest), despite the phase doc listing 1.0 first.
+**Rationale:** Building the Python runtime scaffold first reduces the risk of misaligned assumptions in the LEAN backtest. Understanding IBKR connectivity, data models, and configuration structure before writing C# backtest logic leads to better parity between backtest and runtime. Sprint numbers reflect dependency priority (backtest viability is the strategic prerequisite), not implementation order.
+**Alternatives:** strict sequential order matching sprint numbers; skipping scaffold until after backtest viability confirmed.

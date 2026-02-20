@@ -1,4 +1,4 @@
-﻿# CLAUDE.md - Project Instructions
+# CLAUDE.md - Project Instructions
 
 Claude reads this file automatically at session start.
 Keep this file concise and authoritative.
@@ -15,23 +15,15 @@ If no context is injected, read files manually in this order.
 
 ## Session Protocol
 
-### Start
+### Starting a Session
+1. Read `PROGRESS.md` -- understand current state, active tasks, and priorities
+2. Check `git status` for uncommitted work
+3. Resume from "Next Priorities" in PROGRESS.md
 
-1. Read `PROGRESS.md` including gate scoreboard.
-2. Run `git status`.
-3. Resume from `Next Priorities`.
+> If no session context was injected above (you don't see PROGRESS.md content), read PROGRESS.md and DECISIONS.md manually before proceeding.
 
-### During
-
-- Write changes directly to files.
-- Keep work in small, verifiable checkpoints.
-- Run tests before commit when tests exist.
-- Update docs whenever behavior changes.
-
-### End
-
-- Run `/handoff`.
-- Ensure `PROGRESS.md` and gate scoreboard reflect the new state.
+### Ending a Session
+Run `/handoff` to write a clear briefing for the next session. Hooks handle timestamp and auto-commit automatically.
 
 ## Canonical Project Identity
 
@@ -49,39 +41,31 @@ If no context is injected, read files manually in this order.
 - 8-15% annual return is a planning hypothesis, not a committed result.
 - Phase advancement is blocked unless `docs/VALIDATION_GATES.md` criteria are passed.
 
-## Autonomy and Boundaries
+## Autonomy Boundaries
 
-Claude CAN autonomously:
+**CAN autonomously:** create/edit files, install packages, run builds/tests, create branches and PRs, scaffold code, add tests and scripts.
 
-- create and edit files,
-- run builds/tests,
-- create branches and PRs,
-- add tests and scripts.
-
-Claude MUST ask human before:
-
-- changing live/paper mode to live,
-- executing live trades,
-- merging PRs,
-- changing hard risk limits without explicit instruction.
+**MUST ask human before:** changing mode to live, executing live trades, merging PRs, changing hard risk limits, creating GitHub repos, signing up for services, providing API keys, approving major architectural changes.
 
 ## Financial Safety Rules
 
 - Default mode is paper.
 - Risk limits in `optimind/core/constants.py` are safety-critical.
 - Risk framework updates require explicit rationale and ADR entry.
+- Never store credentials in code. Use `.env` files (gitignored).
 
 ## Documentation Rules
 
+- CLAUDE.md target is ~65 lines. See `docs/PROJECT_STRATEGY.md` §Context Budget before adding content here.
 - `docs/PROJECT_STRATEGY.md` is canonical strategy/roadmap.
 - `docs/strategy-roadmap.md` is non-canonical pointer only.
-- Use `DECISIONS.md` for all significant architecture/process changes.
+- Use `DECISIONS.md` for all significant architecture/process changes. It is the durable record — if a session decision matters beyond the 3-note rolling window in `PROGRESS.md`, add an ADR before running `/handoff`.
 - Use `PROGRESS.md` for durable state and gate scoreboard.
 
-## Context Budget
+## Git and Branch Policy
 
-| File | Target Size | Rule |
-|---|---|---|
-| `CLAUDE.md` | short | Keep only operating rules and canonical facts |
-| `PROGRESS.md` | short | Keep current state + gate scoreboard + top priorities |
-| `DECISIONS.md` | medium | Keep active and superseded ADRs explicit |
+- Never commit directly to main — always use feature branches.
+- Branch naming: `feature/`, `fix/`, `chore/` prefix.
+- All changes via PR — Claude creates, human reviews and merges.
+- Feature branches auto-committed at session end (hook: `.claude/hooks/session-end-commit.js`).
+- `main` is excluded from auto-commit — human commits main manually. This applies to docs-only changes.

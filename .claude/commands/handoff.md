@@ -6,6 +6,14 @@ Generate a concise handoff briefing so the next Claude session can pick up exact
 
 ## Steps
 
+### 0. Coding Discipline (apply throughout the session, not just at handoff)
+
+- Write code to files immediately — don't accumulate changes in memory.
+- Commit at natural checkpoints (compiles, tests pass, logical unit complete).
+- Prefer smaller, frequent commits over one large commit.
+- Use Claude's native Tasks for complex multi-step work; keep PROGRESS.md as the durable record.
+- Write tests appropriate to the task before implementing (Standard tier and above).
+
 ### 1. Assess Current State
 
 Review what happened this session:
@@ -65,6 +73,8 @@ If any of these happened this session, add an ADR entry:
 - Made a build/deploy decision
 
 Use the format recorded in DECISIONS.md. Always include alternatives considered and the tradeoff accepted — a decision without alternatives is an assertion, not a record.
+
+**Rule of thumb:** If a decision is important enough to survive the 3-note session-note rolling window, it belongs in DECISIONS.md — not just in session notes.
 
 ### 4. Commit
 
