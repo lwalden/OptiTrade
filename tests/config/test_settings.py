@@ -1,5 +1,7 @@
 """Tests for config/settings.py."""
 
+import warnings
+
 import pytest
 from pydantic import ValidationError
 
@@ -51,3 +53,38 @@ def test_guided_mode_default_true() -> None:
 def test_ai_regime_default_enabled() -> None:
     s = Settings()
     assert s.ai_regime_enabled is True
+
+
+# ── SecretStr ─────────────────────────────────────────────────────────────────
+
+def test_api_key_is_secret_str() -> None:
+    from pydantic import SecretStr
+    s = Settings(anthropic_api_key=SecretStr("sk-ant-test"))
+    assert isinstance(s.anthropic_api_key, SecretStr)
+
+
+def test_api_key_masked_in_repr() -> None:
+    from pydantic import SecretStr
+    s = Settings(anthropic_api_key=SecretStr("sk-ant-supersecret"))
+    assert "supersecret" not in repr(s)
+    assert "supersecret" not in str(s.anthropic_api_key)
+
+
+def test_api_key_accessible_via_get_secret_value() -> None:
+    from pydantic import SecretStr
+    s = Settings(anthropic_api_key=SecretStr("sk-ant-test"))
+    assert s.anthropic_api_key.get_secret_value() == "sk-ant-test"
+
+
+def test_missing_api_key_warns_when_ai_enabled() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        Settings(ai_regime_enabled=True)
+    assert any("OPTIMIND_ANTHROPIC_API_KEY" in str(w.message) for w in caught)
+
+
+def test_missing_api_key_no_warning_when_ai_disabled() -> None:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        Settings(ai_regime_enabled=False)
+    assert not any("OPTIMIND_ANTHROPIC_API_KEY" in str(w.message) for w in caught)

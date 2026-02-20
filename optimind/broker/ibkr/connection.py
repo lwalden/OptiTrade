@@ -23,9 +23,7 @@ Or as an async context manager:
 from __future__ import annotations
 
 import asyncio
-import logging
 from types import TracebackType
-from typing import Self
 
 import structlog
 from ib_async import IB
@@ -77,9 +75,12 @@ class IBKRConnection:
         """
         Connect to IB Gateway using the configured host/port/client_id.
 
-        Raises IBKRConnectionError if connection cannot be established within
-        settings.ib_timeout seconds.
+        No-op if already connected. Raises IBKRConnectionError if connection
+        cannot be established within settings.ib_timeout seconds.
         """
+        if self.is_connected:
+            return
+
         host = settings.ib_host
         port = self.port
         client_id = settings.ib_client_id

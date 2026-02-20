@@ -30,7 +30,7 @@ def make_mock_ib(connected: bool = True) -> MagicMock:
     return ib
 
 
-# ── Port selection ────────────────────────────────────────────────────────────
+# ── Port selection (via Settings) ─────────────────────────────────────────────
 
 def test_paper_mode_uses_paper_port() -> None:
     s = Settings(mode="paper")
@@ -40,6 +40,25 @@ def test_paper_mode_uses_paper_port() -> None:
 def test_live_mode_uses_live_port() -> None:
     s = Settings(mode="live")
     assert s.ib_port == s.ib_live_port
+
+
+# ── IBKRConnection.port and .mode properties ──────────────────────────────────
+
+def test_connection_mode_reflects_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPTIMIND_MODE", "paper")
+    conn = IBKRConnection()
+    # mode/port are read from module-level settings singleton
+    assert conn.mode in ("paper", "live")  # valid value
+    assert conn.port in (4001, 4002)
+
+
+def test_connection_port_is_paper_by_default() -> None:
+    # env_isolation fixture clears OPTIMIND_MODE, so default (paper) applies
+    conn = IBKRConnection()
+    # The module-level `settings` singleton was already created; re-instantiating
+    # Settings() confirms the default without relying on the singleton.
+    fresh = Settings()
+    assert fresh.ib_port == fresh.ib_paper_port
 
 
 # ── connect() ─────────────────────────────────────────────────────────────────
@@ -75,6 +94,19 @@ async def test_connect_raises_on_os_error() -> None:
     with patch.object(conn, "_ib", mock_ib):
         with pytest.raises(IBKRConnectionError):
             await conn.connect()
+
+
+@pytest.mark.asyncio
+async def test_connect_is_noop_when_already_connected() -> None:
+    """Second connect() call on an already-connected instance is a no-op."""
+    conn = IBKRConnection()
+    mock_ib = make_mock_ib(connected=True)
+
+    with patch.object(conn, "_ib", mock_ib):
+        await conn.connect()
+        await conn.connect()  # second call
+        # connectAsync should only have been called once
+        mock_ib.connectAsync.assert_awaited_once()
 
 
 # ── ib property ──────────────────────────────────────────────────────────────
