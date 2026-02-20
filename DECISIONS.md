@@ -1,84 +1,111 @@
-# DECISIONS.md - Architectural Decision Log
+﻿# DECISIONS.md - Architectural Decision Log
 
-> Record significant decisions to prevent re-debating them later.
-> Claude reads this before making architectural choices.
->
-> **When to log:** choosing a library/framework, designing an API, selecting an auth approach, changing a data model, making a build/deploy decision.
-
----
+Record significant decisions to prevent re-debating and documentation drift.
 
 ## ADR Format
 
-Format: Lightweight
+- Status: active | superseded
+- Date: YYYY-MM-DD
+- Decision
+- Rationale
+- Alternatives considered
 
 ---
 
-## ADR-001: Python-primary stack
+## ADR-001: Runtime and backtest language split
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** Python 3.12+ as the sole language for all system components.
-**Rationale:** Ecosystem alignment with ib_async, py_vollib, pandas, QuantConnect LEAN, and MCP servers. Fastest path to production.
-**Alternatives:** C#/.NET (deeper expertise but ecosystem friction), Polyglot Python+C# (added operational complexity)
+**Decision:** Use Python 3.12+ for production runtime; use C# only for LEAN backtests.
+**Rationale:** Python aligns with runtime libraries (`ib_async`, `pydantic`, async ecosystem). C# is LEAN native and the fastest path for robust options backtests.
+**Alternatives:** all-Python (LEAN feature lag), all-C# runtime (ecosystem friction for current runtime architecture).
 
----
-
-## ADR-002: Interactive Brokers as primary broker
+## ADR-002: Interactive Brokers primary broker (Phases 1-3)
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** IBKR via ib_async as the primary and only broker for Phases 1–3.
-**Rationale:** Best API for multi-leg options execution, Portfolio Margin at $110K minimum, $0.65/contract commissions, combo/BAG order support.
-**Alternatives:** Tradier (simpler, commission-free, but weaker multi-leg execution), Alpaca (no multi-leg options support)
+**Decision:** IBKR via `ib_async` is the primary broker for Phases 1-3.
+**Rationale:** robust multi-leg options execution and mature API surface.
+**Alternatives:** Tradier, Alpaca.
 
----
-
-## ADR-003: System-wide paper/live toggle via single env var
+## ADR-003: System-wide paper/live toggle
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** `OPTIMIND_MODE=paper|live` is the single control point. Entire system is paper OR live — no per-strategy or per-trade toggle.
-**Rationale:** Simplest mental model; eliminates mixed-mode bugs. Paper vs. live distinction is purely port selection (4002 vs. 4001).
-**Alternatives:** Per-strategy toggle (more flexibility, more complexity and risk of accidental live execution), per-trade approval (handled separately by guided execution mode)
+**Decision:** `OPTIMIND_MODE=paper|live` controls the entire system mode.
+**Rationale:** avoids mixed-mode execution mistakes.
+**Alternatives:** per-strategy or per-trade mode toggles.
 
----
-
-## ADR-004: Full custom over Option Alpha + AAT combo
+## ADR-004: Full custom build
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** Build a fully custom system rather than combining existing platforms.
-**Rationale:** AI regime detection layer is the core differentiator. Calendar spreads and straddles required for full Optionetics strategy set. Portfolio-level risk management unavailable in any existing platform. Adaptive strategy weighting not possible without custom code.
-**Alternatives:** OA+AAT combo (75% coverage, 0 dev time), OA+QuantConnect (80% coverage, 3–6 months dev)
+**Decision:** Build a full custom system instead of stitching third-party automation tools.
+**Rationale:** risk framework, adaptive weighting, and integration depth are first-class requirements.
+**Alternatives:** OA+AAT combinations and partial platform stacks.
 
----
-
-## ADR-005: ib_async over ib_insync
+## ADR-005: `ib_async` over `ib_insync`
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** Use ib_async (community fork) instead of ib_insync or the native IBKR Python API.
-**Rationale:** ib_insync creator passed away in 2024 and the library is unmaintained. ib_async is the actively maintained community fork under a new org, with the same interface.
-**Alternatives:** Native IBKR Python API (harder to use, no async abstractions), ib_insync (unmaintained, no future fixes)
+**Decision:** use maintained `ib_async`.
+**Rationale:** maintained async IBKR wrapper.
+**Alternatives:** native IBKR API, unmaintained `ib_insync`.
 
----
-
-## ADR-006: SQLite for development, PostgreSQL for production
+## ADR-006: SQLite dev -> PostgreSQL production
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** SQLAlchemy ORM targeting SQLite in Phase 1/2/3 (local dev), migrating to Azure Database for PostgreSQL at production deployment.
-**Rationale:** SQLite needs zero infrastructure setup; SQLAlchemy abstracts the dialect difference. Migration at Azure deployment is a one-time alembic migration.
-**Alternatives:** PostgreSQL from day one (unnecessary complexity in dev), DuckDB (good for analytics but not transactional workloads)
+**Decision:** SQLAlchemy on SQLite in development; PostgreSQL for production.
+**Rationale:** local simplicity with production migration path.
+**Alternatives:** PostgreSQL from day one, DuckDB.
 
----
-
-## ADR-007: uv for dependency management
+## ADR-007: uv dependency workflow
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** Use uv (Astral) for Python dependency management and virtual environments.
-**Rationale:** Significantly faster than pip/Poetry; built-in venv management; compatible with pyproject.toml PEP 621 standard; growing ecosystem adoption.
-**Alternatives:** Poetry (more ecosystem momentum, slower), pip+venv (no lock file, manual), pipenv (largely superseded)
+**Decision:** uv is the dependency and virtualenv manager.
+**Rationale:** speed and simple workflow.
+**Alternatives:** Poetry, pip+venv.
 
----
-
-## ADR-008: hatchling as build backend
+## ADR-008: hatchling backend
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** Use hatchling as the pyproject.toml build backend.
-**Rationale:** Lightweight, PEP 621-compliant, zero config needed for a simple src-layout package. Pairs cleanly with uv. No plugin ecosystem needed at this stage.
-**Alternatives:** setuptools (more complex, legacy config), flit (simpler but less flexible), poetry-core (tied to Poetry workflow)
+**Decision:** use hatchling in `pyproject.toml`.
+**Rationale:** lightweight standard backend.
+**Alternatives:** setuptools, flit, poetry-core.
 
----
-
-## ADR-009: pydantic-settings for configuration + SecretStr for API keys
+## ADR-009: pydantic-settings + SecretStr
+**Status:** active
 **Date:** 2026-02-19
-**Decision:** All tuneable configuration via `pydantic-settings` `BaseSettings` with `OPTIMIND_` env prefix. API keys (Anthropic, future ORATS) typed as `pydantic.SecretStr`.
-**Rationale:** `pydantic-settings` gives free env var parsing, `.env` file loading, and type validation with zero boilerplate. `SecretStr` ensures API keys are never leaked into logs, repr output, or serialized JSON automatically — no `repr=False` workarounds needed.
-**Alternatives:** `python-dotenv` + manual parsing (no validation), dynaconf (more features, more complexity), plain env vars with `os.getenv` (no type safety)
+**Decision:** use `pydantic-settings` with `OPTIMIND_` prefix and `SecretStr` for secrets.
+**Rationale:** type-safe config and secret-safe serialization.
+**Alternatives:** dotenv + manual parsing, dynaconf.
+
+## ADR-010: Performance target framing
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** 8-15% annual return is a hypothesis until validation gates pass.
+**Rationale:** prevents planning from being treated as proven edge.
+**Alternatives:** treat target as committed KPI before evidence.
+
+## ADR-011: Gate-first phase progression
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** no phase advancement without passing `docs/VALIDATION_GATES.md`.
+**Rationale:** reduces build-before-proof risk.
+**Alternatives:** calendar-only progression.
+
+## ADR-012: LLM model lock
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** lock runtime default to `claude-sonnet-4-6` unless changed by ADR.
+**Rationale:** cost/performance consistency and reproducibility.
+**Alternatives:** ad hoc model switching.
+
+## ADR-013: Canonical planning source
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** `docs/PROJECT_STRATEGY.md` is canonical. `docs/strategy-roadmap.md` is pointer-only.
+**Rationale:** remove duplicate planning documents drifting out of sync.
+**Alternatives:** dual-maintained roadmap docs.
+
+## ADR-014: Cost model scenarios
+**Status:** active
+**Date:** 2026-02-20
+**Decision:** ROI reporting must use low/base/high cost scenarios from `docs/COST_MODEL.md`.
+**Rationale:** avoids optimistic single-point estimates.
+**Alternatives:** single monthly cost number.
