@@ -30,21 +30,14 @@ Mode is controlled only by `OPTIMIND_MODE`.
 3. One canonical parameter source.
 4. Backtest/runtime parity is a first-class requirement.
 
-## Canonical Stack
-
-- Runtime: Python 3.12+
-- Backtest language: C# for LEAN
-- Dependency manager: uv
-- Broker API: `ib_async`
-- Storage: SQLite (dev) -> PostgreSQL (prod)
-- Scheduling: APScheduler
-- CLI: Typer
-- LLM runtime model: `claude-sonnet-4-6`
-
 ## Technology Dependencies
 
 | Category | Package | Notes |
 |---|---|---|
+| Runtime | Python 3.12+ | Primary language |
+| Backtest | C# / LEAN | Backtesting only — not part of Python runtime |
+| Dependency manager | `uv` | Locked — do not switch to pip or poetry |
+| Storage | SQLite (dev) → PostgreSQL (prod) | Migrations via Alembic |
 | Validation | `pydantic >= 2.0` | Data contracts across modules |
 | ORM | `sqlalchemy >= 2.0`, `alembic` | DB access and migrations |
 | Async SQLite | `aiosqlite >= 0.20` | **Required** — never use sync SQLite in async context |
@@ -558,12 +551,6 @@ strategies:
 - Azure Monitor for health metrics and alerting
 - MCP server accessible via SSH tunnel for Claude Desktop
 
-### Production Safety Requirements
-
-1. Runbooks and emergency controls tested pre-live.
-2. Monitoring for broker connectivity, data freshness, and service liveness.
-3. Manual operational access path documented.
-
 ---
 
 ## Networking & Localization
@@ -618,8 +605,7 @@ During Phases 1-3 (paper trading only), the ~80ms local WA latency is acceptable
 ## Governance References
 
 - Canonical roadmap: `docs/PROJECT_STRATEGY.md`
-- Validation gates: `docs/VALIDATION_GATES.md`
-- Gate acceptance procedure: `docs/VALIDATION_GATES.md#gate-acceptance-procedure`
+- Validation gates and acceptance procedure: `docs/VALIDATION_GATES.md`
 - Risk framework: `docs/RISK_FRAMEWORK.md`
 - Cost model: `docs/COST_MODEL.md`
 - Performance model: `docs/PERFORMANCE_MODEL.md`
