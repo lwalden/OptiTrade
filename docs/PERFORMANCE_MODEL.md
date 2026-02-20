@@ -49,6 +49,9 @@ Every performance review must report:
   - standard deviation of daily returns * sqrt(252).
 - Drawdown:
   - max peak-to-trough drawdown on equity curve.
+  - Always reported as positive magnitude in [0.0, 1.0].
+    Example: 0.18 means 18% drawdown.
+    See `docs/VALIDATION_GATES.md` (Data Conventions) for gate acceptance requirements.
 
 ## Step 3: Interval estimates
 

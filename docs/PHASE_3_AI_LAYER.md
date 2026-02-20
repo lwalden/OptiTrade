@@ -96,4 +96,5 @@ Add AI-assisted regime interpretation and portfolio review while preserving dete
 - [ ] AI-vs-static ablation report complete.
 - [ ] Fallback-path tests complete.
 - [ ] Cost usage aligns with cost model assumptions.
+- [ ] Gate report produced at `reports/gates/phase3_ai_ablation.json`.
 - [ ] Gate scoreboard updated in `PROGRESS.md`.
