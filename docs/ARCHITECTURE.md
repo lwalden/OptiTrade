@@ -596,6 +596,46 @@ Access:
 
 ---
 
+## Networking & Localization
+
+### Why Region Matters for Options Execution
+
+IBKR's options execution infrastructure is co-located in **Secaucus, NJ** (IBKR's primary data center). Round-trip latency from the trading process to IBKR directly affects fill quality on SmartPricing walks — each $0.05 adjustment step waits for an acknowledgment before submitting the next one.
+
+| Deployment Location | RTT to IBKR Secaucus NJ | Impact |
+|---|---|---|
+| Local dev (Kirkland, WA) | ~70-90ms | Acceptable for paper trading (Phases 1-3) |
+| Azure West US 2 (Washington) | ~65-75ms | No meaningful improvement over local |
+| **Azure East US (Virginia)** | **~5-12ms** | **Required for production** |
+| Azure East US 2 (Virginia) | ~8-15ms | Acceptable fallback |
+
+### Production Region: Azure East US (Virginia)
+
+**Required region for the production VM (Phase 4 go-live).**
+
+- 5-12ms RTT vs IBKR Secaucus NJ — approximately 10x improvement over local WA dev
+- Reduces per-step SmartPricing latency from ~80ms to ~10ms (meaningful for 60-second walk windows)
+- Azure East US is IBKR's nearest Azure region; co-location is the single biggest latency lever
+- All Azure resources (VM, PostgreSQL, Blob Storage, Monitor) in East US to minimize inter-region transfer costs and latency
+
+### Local Development Exception
+
+During Phases 1-3 (paper trading only), the ~80ms local WA latency is **acceptable**:
+- Paper fills are simulated; IBKR does not fill paper orders at the speed of live markets
+- SmartPricing latency is not a correctness issue during paper trading — it only affects whether you get better mid-price fills in live trading
+- No financial risk from latency during paper phases; optimize for developer ergonomics
+
+**Transition rule:** Switch from local → Azure East US VM before switching `OPTIMIND_MODE=live`. Do not run live trading from a home internet connection.
+
+### IBKR Gateway Network Requirements
+
+- IB Gateway must run on the **same host** as OptiMind (loopback connection: `127.0.0.1:4001/4002`)
+- IB Gateway cannot be exposed over the public internet; use SSH tunnel if debugging remotely
+- IBC (IB Controller) manages auto-login and restart of IB Gateway on the Azure VM
+- Outbound ports required: 4001 (live) / 4002 (paper) on localhost; IBKR requires outbound 443 for its own connections
+
+---
+
 ## Security Considerations
 
 | Concern | Mitigation |
