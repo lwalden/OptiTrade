@@ -86,6 +86,17 @@
          close circuit breaker — the live system would halt at -5%/day, the backtest
          will show the full drawdown without that protection. Document this difference.)
        - Compare against CBOE S&P 500 Iron Condor Index (CNDR) as benchmark
+       - **Slippage cost analysis (Sharpe-Cost gate):**
+         The backtest must model realistic fill prices, not theoretical mid-prices. LEAN
+         supports slippage models — use a fixed slippage of $0.75/leg ($3.00/4-leg combo)
+         as a conservative baseline for SPX options. Then compute:
+           Gross profit (pre-slippage) vs Net profit (post-slippage)
+           Slippage drag = (gross - net) / gross × 100%
+         If slippage consumes > 30% of gross profit over the full backtest period,
+         the SmartPricing walk logic is the primary lever to optimize before Phase 2.
+         Do NOT proceed with a strategy whose net edge is primarily eaten by transaction
+         costs — that is not a strategy problem, it is an execution problem. Fix the
+         walk algorithm first (shorter intervals, tighter initial offset, etc.).
 
 1.0.5  Walk-forward parameter sensitivity
        - In-sample: 2019-2022 (includes COVID, 2022 bear market)
@@ -318,6 +329,7 @@
 - For SPX: 1 contract = 100x multiplier, so $5 wide wings = $500 max risk per contract
 - Paper account fills may not perfectly simulate live fills — note this limitation
 - **SPX 4-leg combo slippage reality:** In live trading, 4-leg SPX iron condor combos carry meaningful slippage versus paper fills. SPX options have wide bid-ask spreads ($0.50-$2.00+ per leg in normal conditions; $3-5+ per leg when VIX is elevated). A combo's natural price (worst fill) can be $1-3 worse than mid-price per contract, translating to $100-$300 slippage per 1-contract trade. The SmartPricing walk-toward-natural logic directly addresses this, but budget approximately $0.50-$1.00/contract round-trip slippage in return projections. SPY and QQQ have tighter spreads — prefer them when SPX slippage would be prohibitive.
+- **SmartPricing threshold from Sprint 1.0:** The Sprint 1.0 backtest (Task 1.0.4) establishes the acceptable slippage ceiling: if slippage consumes > 30% of gross profit, the SmartPricing walk parameters become the primary tuning target before Phase 2. Use the backtest's $0.75/leg slippage model as the benchmark — if live paper fills consistently beat $0.75/leg, SmartPricing is performing; if they exceed it, shorten the walk interval or tighten the initial offset.
 
 ---
 
