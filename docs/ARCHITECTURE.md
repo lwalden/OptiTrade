@@ -1,4 +1,4 @@
-﻿# OptiMind Technical Architecture
+# OptiMind Technical Architecture
 
 **Last Updated:** 2026-02-20
 **Status:** Canonical architecture summary
@@ -41,91 +41,545 @@ Mode is controlled only by `OPTIMIND_MODE`.
 - CLI: Typer
 - LLM runtime model: `claude-sonnet-4-6`
 
-## Module Layout
+## Technology Dependencies
 
-- `optimind/config`: settings and strategy config.
-- `optimind/core`: models, constants, events, persistence.
-- `optimind/broker`: broker adapters and connection logic.
-- `optimind/data`: chain, Greeks, IV and market context pipelines.
-- `optimind/strategies`: strategy implementations.
-- `optimind/risk`: risk checks, breakers, concentration logic.
-- `optimind/execution`: order execution and guided flow.
-- `optimind/monitor`: position and threat monitoring.
-- `optimind/ai`: AI client and regime/review helpers.
-- `optimind/mcp`: portfolio query interface for Claude tools.
-- `optimind/dashboard`: operational and performance dashboard.
-- `optimind/tax`: tax lot and reporting modules.
+| Category | Package | Notes |
+|---|---|---|
+| Validation | `pydantic >= 2.0` | Data contracts across modules |
+| ORM | `sqlalchemy >= 2.0`, `alembic` | DB access and migrations |
+| Async SQLite | `aiosqlite >= 0.20` | **Required** — never use sync SQLite in async context |
+| Broker | `ib_async >= 1.0` | IBKR API (successor to ib_insync) |
+| Broker alt | `httpx` | Tradier REST API (Phase 4) |
+| Options math | `py_vollib` | Black-Scholes Greeks and IV |
+| Analytics | `numpy`, `pandas`, `scipy` | Data manipulation and statistics |
+| AI | `anthropic >= 0.40` | Claude API SDK |
+| Prompt templates | `jinja2` | AI prompt management |
+| MCP | `mcp >= 1.0` | Model Context Protocol SDK |
+| Dashboard | `streamlit >= 1.30`, `plotly` | Operational dashboard |
+| Scheduling | `apscheduler` | Time-based task scheduling |
+| CLI | `typer` | Command-line interface |
+| Logging | `structlog` | Structured log output |
+| Calendar | `exchange_calendars` | Market holiday handling |
+| Backtesting | LEAN CLI (`pip install lean`) | C# LEAN engine orchestration |
+| Testing | `pytest`, `pytest-asyncio`, `hypothesis`, `pytest-cov` | Test suite |
+| Quality | `ruff`, `mypy` | Linting and type checking |
 
-## Key Event Flows
+---
 
-## Trade entry flow
+## Project Structure
 
-1. Scheduler triggers scan.
-2. Strategy layer proposes candidate.
-3. Risk manager approves/rejects.
-4. Guided mode requests approval (if enabled).
-5. Execution engine routes order.
-6. Fill creates/updates position state.
+```
+optimind/
+├── __main__.py                 # Entry point
+├── config/
+│   ├── settings.py             # Pydantic settings (env vars, defaults)
+│   ├── strategies.yaml         # Strategy configurations [canonical param source]
+│   ├── risk_limits.yaml        # Risk parameters (non-hardcoded overrides)
+│   ├── watchlist.yaml          # Underlyings to monitor
+│   └── sectors.yaml            # Sector correlation mapping
+│
+├── core/
+│   ├── models.py               # Pydantic data models (Position, TradeSetup, etc.)
+│   ├── events.py               # Event bus (pub/sub for system events) [stub]
+│   ├── database.py             # SQLAlchemy models and session management [stub]
+│   ├── logging.py              # Structured logging configuration [stub]
+│   └── constants.py            # Hard-coded limits (CANNOT be overridden by config)
+│
+├── broker/
+│   ├── base.py                 # Abstract BrokerAdapter interface [stub]
+│   ├── ibkr/
+│   │   ├── adapter.py          # IBKRAdapter implementation [stub]
+│   │   ├── connection.py       # IB Gateway connection management
+│   │   ├── orders.py           # Order construction (combo/BAG orders) [stub]
+│   │   └── data.py             # Market data retrieval [stub]
+│   └── tradier/
+│       └── adapter.py          # TradierAdapter (Phase 4) [stub]
+│
+├── data/
+│   ├── market_data.py          # Real-time market data manager [stub]
+│   ├── options_chain.py        # Options chain retrieval and filtering [stub]
+│   ├── greeks.py               # Greeks calculation (py_vollib + IBKR validation) [stub]
+│   ├── iv_surface.py           # IV rank, percentile, surface analysis [stub]
+│   └── orats.py                # ORATS data integration (Phase 3) [stub]
+│
+├── strategies/
+│   ├── base.py                 # StrategyBase abstract class [stub]
+│   ├── registry.py             # Strategy registration and discovery [stub]
+│   ├── iron_condor.py          # Iron condor strategy [stub]
+│   ├── butterfly.py            # Butterfly spread strategy [stub]
+│   ├── credit_spread.py        # Bull put / bear call spreads [stub]
+│   ├── calendar_spread.py      # Calendar/horizontal spreads (Phase 3) [stub]
+│   └── straddle.py             # Pre-earnings straddle (Phase 3) [stub]
+│
+├── risk/
+│   ├── manager.py              # Pre-trade risk checks [stub]
+│   ├── portfolio_greeks.py     # Aggregate portfolio Greeks monitoring [stub]
+│   ├── circuit_breakers.py     # Daily/weekly/monthly loss limits [stub]
+│   ├── margin.py               # Margin utilization tracking [stub]
+│   └── correlation.py          # Sector correlation enforcement [stub]
+│
+├── execution/
+│   ├── engine.py               # Order execution with SmartPricing [stub]
+│   ├── guided.py               # Guided execution mode (approve/reject) [stub]
+│   └── position_manager.py     # Position lifecycle management [stub]
+│
+├── monitor/
+│   ├── position_monitor.py     # Real-time position P&L and Greeks tracking [stub]
+│   ├── threat_detector.py      # Adjustment trigger detection [stub]
+│   ├── adjustment_engine.py    # Rolling and transformation logic [stub]
+│   └── scheduler.py            # Time-based task scheduling [stub]
+│
+├── ai/
+│   ├── client.py               # Claude API client wrapper [stub]
+│   ├── regime.py               # Market regime detection (quant + AI) [stub]
+│   ├── trade_rationale.py      # Trade reasoning generation [stub]
+│   ├── portfolio_review.py     # AI portfolio assessment [stub]
+│   └── prompts/                # Prompt templates (Jinja2)
+│       ├── regime_analysis.j2
+│       ├── trade_rationale.j2
+│       ├── adjustment_reasoning.j2
+│       └── portfolio_review.j2
+│
+├── mcp/
+│   ├── server.py               # MCP server main [stub]
+│   └── tools.py                # MCP tool definitions [stub]
+│
+├── dashboard/
+│   ├── app.py                  # Streamlit dashboard [stub]
+│   └── pages/                  # Dashboard pages [stub]
+│
+├── cli/
+│   ├── main.py                 # CLI entry point (Typer) [stub]
+│   └── commands/               # CLI command modules [stub]
+│
+└── tax/
+    ├── lot_tracker.py          # Tax lot tracking [stub]
+    ├── section_1256.py         # Section 1256 60/40 treatment [stub]
+    ├── wash_sale.py            # Wash sale detection [stub]
+    └── reports.py              # Tax report generation [stub]
+```
 
-## Position monitoring flow
+Backtesting artifacts (separate from Python runtime):
 
-1. Monitor updates PnL and Greeks.
-2. Threat detector evaluates adjustment/exit signals.
-3. Risk and execution handle actions.
-4. Close events update performance and tax records.
+```
+backtests/
+└── lean/
+    ├── Algorithm/              # C# LEAN strategy implementation
+    ├── Config/
+    │   └── StrategyConstants.cs  # Generated by config translator — do not edit manually
+    ├── results/
+    │   └── phase1_baseline.json  # Backtest output consumed by gate acceptance
+    └── lean.json               # LEAN project config
+scripts/
+└── generate_lean_config.py    # Config translator: strategies.yaml → StrategyConstants.cs
+```
 
-## Regime flow
+---
 
-1. Quantitative regime always runs.
-2. AI regime call is optional enhancement.
-3. Fallback ladder on timeout/errors:
-   - fresh AI,
-   - cached recent AI,
-   - quantitative baseline.
+## Event-Driven Architecture
 
-## Data and Integrity Rules
+The system uses an internal event bus (`core/events.py`) for loose coupling between modules. Modules publish events; other modules subscribe. No direct cross-module calls in the trading loop.
 
-1. Broker data is throttled and paced.
-2. Validator checks bounds and staleness.
-3. Risk computations consume validated data only.
-4. Combo positions require per-leg timestamp coherence.
+```
+Event                    Producers → Consumers
+─────────────────────────────────────────────────────────────
+MARKET_DATA_UPDATED      data/ → monitor/, strategies/
+SCAN_COMPLETE            strategies/ → execution/ (guided mode), monitor/
+TRADE_PROPOSED           strategies/ → risk/
+RISK_APPROVED            risk/ → execution/
+RISK_REJECTED            risk/ → cli/ (notification)
+ORDER_SUBMITTED          execution/ → monitor/
+ORDER_FILLED             execution/ → monitor/, tax/
+POSITION_UPDATED         monitor/ → risk/ (portfolio Greeks)
+THREAT_DETECTED          monitor/ → execution/ (adjustment)
+ADJUSTMENT_PROPOSED      monitor/ → execution/ (guided mode or auto)
+EXIT_TRIGGERED           monitor/ → execution/
+POSITION_CLOSED          execution/ → monitor/, tax/, dashboard/
+CIRCUIT_BREAKER_FIRED    risk/ → execution/ (halt), cli/ (alert)
+REGIME_CHANGED           ai/ → strategies/ (weight adjustment)
+AI_CACHE_USED            ai/ → monitor/ (observability)
+AI_FALLBACK_TRIGGERED    ai/ → monitor/ (observability)
+```
 
-## Configuration and Parity
+Design principle: modules don't call each other directly. This prevents circular imports and makes unit testing straightforward — each module can be tested by publishing events and asserting on resulting events or state changes.
 
-- Canonical strategy parameters live in `config/strategies.yaml`.
-- LEAN constants are generated artifacts from canonical config.
-- Runtime and backtest parity rules are defined in `docs/BACKTEST_LIVE_PARITY.md`.
+---
+
+## Key Data Flows
+
+### Trade entry flow (guided mode)
+
+```
+Scheduler (10:30 AM) → Scanner
+  → retrieves options chains, calculates Greeks/IV
+  → identifies candidates meeting strategy criteria
+  → publishes SCAN_COMPLETE
+
+SCAN_COMPLETE → Strategy Engine
+  → selects best candidate, constructs TradeSetup
+  → publishes TRADE_PROPOSED
+
+TRADE_PROPOSED → Risk Manager
+  → runs all pre-trade checks
+  If APPROVED → publishes RISK_APPROVED
+  If REJECTED → publishes RISK_REJECTED → notification
+
+RISK_APPROVED → Guided Execution Mode
+  → stores in pending_trades, notifies user
+  User: `optimind approve <id>`
+  → publishes to Execution Engine
+
+Execution Engine → builds ComboOrder
+  → submits to IBKR with SmartPricing
+  → monitors for fill
+  On fill → publishes ORDER_FILLED
+
+ORDER_FILLED → Position Manager → begins monitoring cycle
+```
+
+### Position monitoring flow
+
+```
+Every 60 seconds during market hours:
+
+Position Monitor → queries IBKR for position data
+  → calculates current P&L, Greeks
+  → publishes POSITION_UPDATED
+
+POSITION_UPDATED → Threat Detector
+  If threat_level changes → publishes THREAT_DETECTED
+
+POSITION_UPDATED → Exit Logic
+  If profit_target | stop_loss | DTE threshold hit → publishes EXIT_TRIGGERED
+
+EXIT_TRIGGERED → Execution Engine
+  → builds close order, executes with SmartPricing
+  On fill → publishes POSITION_CLOSED
+
+POSITION_CLOSED → Performance Tracker, Tax Lot Tracker, Trade Journal
+```
+
+### AI regime assessment flow
+
+```
+Twice daily (10:15 AM, 2:00 PM ET):
+
+Market Context Collector → gathers all data points (via MarketDataValidator)
+  → VIX, term structure, IV ranks, sector performance, etc.
+
+Regime Engine (Quantitative) → applies rule-based classification [ALWAYS runs first]
+  → produces regime_quantitative  ← permanent safety-net baseline
+
+Regime Engine (AI) → asyncio.wait_for(Claude API call, timeout=5.0):
+
+  [SUCCESS]:
+    → formats MarketContext, calls Claude, parses JSON response
+    → operative_regime = regime_ai
+
+  [TIMEOUT or API error]:
+    → regime_ai = None
+    Is there a prior successful AI assessment < 2 hours old?
+      [YES] → operative_regime = last_successful_regime_ai
+              logs: "Using cached AI regime from {timestamp}"
+              emits: AI_CACHE_USED
+      [NO]  → operative_regime = regime_quantitative
+              logs: "No recent AI regime — using quantitative baseline"
+              emits: AI_FALLBACK_TRIGGERED
+
+  [Invalid JSON / schema mismatch]:
+    → same fallback path as timeout
+
+If operative_regime changed → publishes REGIME_CHANGED
+  → Strategy Weighting Engine adjusts allocation percentages
+```
+
+**Regime fallback ladder (graceful degradation):**
+
+1. Fresh AI response (< 5s, valid JSON) → use `regime_ai`
+2. AI timeout/error, prior successful AI < 2 hours old → use cached `regime_ai`
+3. No recent AI → use `regime_quantitative`
+
+The 2-hour window aligns with the twice-daily assessment cadence: a timeout at 10:15 AM still has the prior 2:00 PM result. AI failure is always non-fatal — any `anthropic` SDK exception must be caught in `ai/client.py` and must not propagate to the main trading loop.
+
+---
+
+## Market Data Layer: Critical Rules
+
+### IBKR API pacing
+
+IBKR enforces a 50 message/second rate limit. Exceeding it causes disconnection.
+
+- Throttle all `reqMktData` and `reqHistoricalData` calls to **40 messages/second** (20% safety margin).
+- Batch options chain requests: retrieve all strikes for one expiry before moving to the next.
+- Implement exponential backoff on `PACING_VIOLATION` errors from IBKR.
+- Use a semaphore with max **10 concurrent market data subscriptions** — no unbounded concurrent requests.
+- Log pacing near-misses (> 35 msg/sec) for monitoring.
+- Historical data rate: **1 request/second** (IBKR enforced).
+
+### Data caching (mandatory)
+
+| Data | Cache TTL | Rationale |
+|---|---|---|
+| Options chain snapshots | 60 seconds | Chain data is not tick-by-tick; constant re-fetch wastes pacing budget |
+| IV rank per underlying | 1 hour | IV rank is a slow-moving daily metric |
+| Historical volatility (for IV rank) | 24 hours | Historical data does not change intraday |
+| Position Greeks (open positions) | Never cache | Always use live tick data — stale Greeks cause incorrect risk decisions |
+| Underlying price (for risk checks) | 5 seconds max | Short cache acceptable; Greeks validation needs recent underlying price |
+| VIX spot and term structure | 30 seconds | Slow-moving relative to equity prices |
+
+Cache implementation: in-memory dict with TTL tracking (Phase 1-3); SQLite-backed (Phase 4, survives restarts).
+
+### Data integrity validation
+
+All market data passes through `MarketDataValidator` before entering the event bus. No raw IBKR tick data reaches the Risk Manager directly. Validation covers:
+
+- Field presence and type correctness.
+- Value bounds (e.g., strike > 0, IV > 0, delta in [-1, 1]).
+- Staleness checks (timestamp recency).
+- Leg coherence for combo positions (all legs same timestamp ± tolerance).
+
+---
+
+## Data Models
+
+Key Pydantic models in `optimind/core/models.py`:
+
+```python
+class MarketContext(BaseModel):
+    timestamp: datetime
+    vix_spot: float
+    vix_3m: float
+    vix_slope: Literal["contango", "backwardation", "flat"]
+    spx_price: float
+    spx_rv10: float          # 10-day realized volatility
+    spx_rv30: float          # 30-day realized volatility
+    iv_ranks: dict[str, float]          # {"SPX": 45.2, "QQQ": 62.1}
+    sector_performance: dict[str, float]  # {"XLK": 1.2, "XLE": -1.5}
+    regime_quantitative: str             # From rule-based engine
+    regime_ai: str | None                # From Claude, if available
+
+class Position(BaseModel):
+    id: str
+    strategy: str            # "iron_condor", "butterfly", etc.
+    underlying: str
+    legs: list[PositionLeg]
+    entry_date: datetime
+    entry_credit: float      # Positive = credit received
+    current_pnl: float
+    current_pnl_pct: float   # As % of max profit
+    max_profit: float        # Always positive (Field(gt=0))
+    max_loss: float          # Always negative (Field(lt=0)), e.g. -500.0
+    greeks: PositionGreeks
+    dte: int                 # Days to nearest expiration
+    threat_level: Literal["GREEN", "YELLOW", "RED"]
+    adjustment_count: int
+    status: Literal["PENDING", "OPEN", "CLOSING", "CLOSED"]
+
+class TradeSetup(BaseModel):
+    strategy: str
+    underlying: str
+    legs: list[OrderLeg]
+    expected_credit: float
+    max_risk: float
+    probability_of_profit: float
+    greeks: PositionGreeks
+    rationale: str           # AI-generated or rule-based
+    risk_check_result: RiskCheckResult | None
+
+class RiskCheckResult(BaseModel):
+    approved: bool
+    checks: list[RiskCheck]  # Each check with pass/fail and detail
+    rejection_reason: str | None
+    suggested_adjustment: str | None  # e.g. "Reduce to 2 contracts"
+```
+
+---
+
+## Database Schema
+
+SQLite in development; PostgreSQL in production. Migrations managed by Alembic.
+
+```
+positions
+  id TEXT PK
+  strategy TEXT NOT NULL
+  underlying TEXT NOT NULL
+  entry_date TIMESTAMP NOT NULL
+  close_date TIMESTAMP
+  entry_credit REAL
+  close_debit REAL
+  max_profit REAL
+  max_loss REAL
+  realized_pnl REAL
+  status TEXT DEFAULT 'OPEN'
+  adjustment_count INTEGER DEFAULT 0
+  rationale TEXT
+  regime_at_entry TEXT
+
+position_legs
+  id INTEGER PK
+  position_id TEXT FK → positions.id
+  contract_symbol TEXT
+  right TEXT            -- 'C' or 'P'
+  strike REAL
+  expiry DATE
+  action TEXT           -- 'BUY' or 'SELL'
+  quantity INTEGER
+  fill_price REAL
+  close_price REAL
+
+orders
+  id TEXT PK
+  position_id TEXT FK → positions.id
+  order_type TEXT       -- 'ENTRY', 'EXIT', 'ADJUSTMENT'
+  status TEXT           -- 'SUBMITTED', 'FILLED', 'CANCELLED', 'REJECTED'
+  submitted_at TIMESTAMP
+  filled_at TIMESTAMP
+  limit_price REAL
+  fill_price REAL
+  price_adjustments INTEGER DEFAULT 0
+  commission REAL
+
+market_context
+  id INTEGER PK
+  timestamp TIMESTAMP NOT NULL
+  vix_spot REAL
+  vix_3m REAL
+  vix_slope TEXT
+  spx_price REAL
+  regime_quantitative TEXT
+  regime_ai TEXT
+  regime_confidence REAL
+  raw_data JSON         -- Full structured snapshot
+
+iv_history
+  id INTEGER PK
+  underlying TEXT NOT NULL
+  date DATE NOT NULL
+  iv_rank REAL
+  iv_percentile REAL
+  iv_current REAL
+  iv_52w_high REAL
+  iv_52w_low REAL
+  UNIQUE(underlying, date)
+
+greeks_snapshots
+  id INTEGER PK
+  position_id TEXT FK → positions.id
+  timestamp TIMESTAMP NOT NULL
+  delta REAL
+  gamma REAL
+  theta REAL
+  vega REAL
+  pnl REAL
+  underlying_price REAL
+
+risk_events
+  id INTEGER PK
+  timestamp TIMESTAMP NOT NULL
+  event_type TEXT       -- 'TRADE_CHECK', 'CIRCUIT_BREAKER', 'MARGIN_ALERT'
+  result TEXT           -- 'APPROVED', 'REJECTED', 'TRIGGERED'
+  detail JSON
+
+tax_lots
+  id INTEGER PK
+  position_id TEXT FK → positions.id
+  open_date DATE
+  close_date DATE
+  instrument TEXT
+  proceeds REAL
+  cost_basis REAL
+  gain_loss REAL
+  is_section_1256 BOOLEAN
+  holding_period TEXT   -- 'SHORT', 'LONG', or '60/40' for Section 1256
+  wash_sale_adjustment REAL DEFAULT 0
+```
+
+---
+
+## Configuration System
+
+`config/strategies.yaml` is the single canonical source for all strategy parameters. The config translator (`scripts/generate_lean_config.py`) reads it at build time and generates `backtests/lean/Config/StrategyConstants.cs`. Never edit `StrategyConstants.cs` manually.
+
+```yaml
+# config/strategies.yaml (structure)
+strategies:
+  iron_condor:
+    enabled: true
+    underlyings: [SPX, SPY, QQQ, IWM]
+    params:
+      target_dte: 45
+      short_delta: 0.30
+      wing_width_spx: 50      # $50 wide on SPX
+      wing_width_spy: 5       # $5 wide on SPY/QQQ/IWM
+      iv_rank_min: 50
+      profit_target_pct: 50
+      stop_loss_pct: 200
+      dte_tighten: 21
+      dte_close: 14
+      max_concurrent: 3
+    schedule:
+      scan_times: ["10:30", "14:00"]
+      timezone: "US/Eastern"
+
+  butterfly:
+    enabled: true
+    underlyings: [AAPL, MSFT, GOOGL, AMZN, NVDA]
+    params:
+      target_dte: 30
+      wing_width: 10
+      iv_rank_max: 30
+      profit_target_pct: 50
+      dte_close: 14
+      max_concurrent: 2
+    schedule:
+      scan_times: ["10:30"]
+      timezone: "US/Eastern"
+```
+
+---
 
 ## Deployment Architecture
 
-## Development
+### Development
 
-- Local runtime + local IB Gateway paper session.
-- SQLite local DB.
+- Local runtime + IB Gateway paper session (port 4002)
+- SQLite database (`./data/optimind.db`)
+- Streamlit dashboard (`localhost:8501`)
 
-## Production
+### Production
 
-- Azure VM runtime + IB Gateway live session.
-- PostgreSQL managed database.
-- Health monitoring and alerting.
+- Azure VM (D2s v5, Ubuntu 24.04)
+- IB Gateway live session (port 4001), managed by IBC for auto-restart
+- OptiMind as systemd service with auto-restart
+- PostgreSQL managed database (Azure flexible server)
+- Streamlit dashboard behind nginx reverse proxy
+- Azure Blob Storage for daily backups
+- Azure Monitor for health metrics and alerting
+- MCP server accessible via SSH tunnel for Claude Desktop
 
-## Production Safety Requirements
+### Production Safety Requirements
 
 1. Runbooks and emergency controls tested pre-live.
 2. Monitoring for broker connectivity, data freshness, and service liveness.
 3. Manual operational access path documented.
 
+---
+
 ## Security Baseline
 
-- Secrets only via env vars.
-- No credentials in repo.
-- Restricted dashboard exposure.
-- Explicit safeguards against accidental live execution.
+- Secrets only via env vars — no credentials in code or config files.
+- No credentials committed to the repo.
+- Dashboard exposure restricted (HTTPS + auth).
+- Explicit safeguards against accidental live execution (`OPTIMIND_MODE` must be set explicitly).
+
+---
 
 ## Governance References
 
 - Canonical roadmap: `docs/PROJECT_STRATEGY.md`
 - Validation gates: `docs/VALIDATION_GATES.md`
+- Gate acceptance procedure: `docs/VALIDATION_GATES.md#gate-acceptance-procedure`
 - Risk framework: `docs/RISK_FRAMEWORK.md`
 - Cost model: `docs/COST_MODEL.md`
 - Performance model: `docs/PERFORMANCE_MODEL.md`
