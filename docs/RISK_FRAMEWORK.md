@@ -49,7 +49,7 @@ All checks must pass before order submission:
 
 ## Layer 2: Continuous portfolio monitoring
 
-During market hours:
+During market hours (9:30 AM – 4:00 PM ET; 4:15 PM for SPX positions):
 
 - aggregate Greeks,
 - realized + unrealized PnL,

@@ -303,6 +303,18 @@ The 2-hour window aligns with the twice-daily assessment cadence: a timeout at 1
 
 ---
 
+## Market Hours Definition
+
+All references to "during market hours" in this document mean:
+
+- **Position monitor, circuit breakers, risk checks:** 9:30 AM – 4:00 PM ET (US equity/options regular session).
+- **Scan times:** Per `config/strategies.yaml` schedule (default: 10:30 AM and 2:00 PM ET).
+- **AI regime assessment:** 10:15 AM and 2:00 PM ET (before each scan window).
+- **SPX index options:** Trade until 4:15 PM ET; monitor loop runs until 4:15 PM for SPX positions.
+- **Scheduler uses `exchange-calendars` library** to detect market holidays — no hardcoded date lists.
+
+---
+
 ## Market Data Layer: Critical Rules
 
 ### IBKR API pacing
