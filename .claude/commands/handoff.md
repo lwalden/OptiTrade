@@ -14,8 +14,6 @@ Generate a concise handoff briefing so the next Claude session can pick up exact
 - Use Claude's native Tasks for complex multi-step work; keep PROGRESS.md as the durable record.
 - Write tests appropriate to the task before implementing (Standard tier and above).
 
----
-
 ### 1. Assess Current State
 
 Review what happened this session:
