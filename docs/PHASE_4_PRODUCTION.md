@@ -115,4 +115,5 @@ Immediate alerts for:
 - [ ] Pre-live runbook tested.
 - [ ] Production stability window passed.
 - [ ] Staged live evidence captured.
+- [ ] Gate report produced at `reports/gates/phase4_live_readiness.json`.
 - [ ] Gate scoreboard updated in `PROGRESS.md`.
