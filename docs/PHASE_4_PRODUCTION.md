@@ -1,12 +1,12 @@
 # Phase 4: Backtesting, Optimization & Production
 ## Weeks 29-40+ | ~15-20 hrs/week | Total: ~180-240 hours
 
-**Phase Goal:** Validate strategies with historical backtesting, build performance analytics dashboard, add second broker adapter (Tradier), harden for production, deploy to Azure, and execute first live trade.
+**Phase Goal:** Build performance analytics dashboard, run walk-forward optimization using the Phase 1 LEAN backtests to confirm production parameter choices, add second broker adapter (Tradier), harden for production, deploy to Azure, and execute first live trade.
 
 **Entry Criteria:** Phase 3 complete — AI-enhanced paper trading running 8+ weeks with per-strategy and AI-vs-static comparison data.
 
 **Exit Criteria:**
-- [ ] Backtests validate paper trading results within 2% CAGR
+- [ ] Walk-forward optimization (using Phase 1 LEAN backtests) confirms live parameters within 2% CAGR of historical results
 - [ ] Performance dashboard operational (Streamlit or React)
 - [ ] Tradier broker adapter functional (secondary broker)
 - [ ] System deployed to Azure VM with 24/7 uptime
@@ -17,58 +17,43 @@
 
 ---
 
-### Sprint 4.1: Historical Backtesting with QuantConnect (Weeks 29-32)
+### Sprint 4.1: Walk-Forward Optimization & Paper Trading Validation (Weeks 29-31)
+
+**Note:** The initial QuantConnect LEAN backtests were built in Phase 1 Sprint 1.0 (C# algorithms, 2019-2025 backtest, walk-forward parameter validation). This sprint focuses on comparing those predictions against the actual paper trading data accumulated during Phases 2-3, and locking final production parameters.
 
 **Deliverables:**
-- QuantConnect LEAN environment configured for options backtesting
-- Iron condor backtest covering 5+ years of SPX data
-- Butterfly and credit spread backtests
-- Comparison of backtest results to paper trading results
+- Paper trading results compared to Phase 1 backtest predictions
+- Updated walk-forward using 2024-2025 out-of-sample data
+- Final production parameters locked in `config/strategies.yaml`
+- Config Translator re-run to confirm C# backtests are in sync with final Python config
 
 **Tasks:**
 ```
-4.1.1  Set up QuantConnect LEAN environment
-       - Install LEAN locally (Docker preferred for reproducibility)
-       - OR use QuantConnect cloud ($8-80/mo depending on compute needs)
-       - Configure historical options data access
-       - Build project structure for backtesting strategies
-       - Note: LEAN supports Python algorithms natively
-
-4.1.2  Implement iron condor backtest
-       - Translate OptiMind iron condor logic to LEAN algorithm:
-         * Entry: IV rank > 50%, 30-delta shorts, 45 DTE
-         * Exit: 50% profit, 200% loss, 21 DTE tighten, 14 DTE close
-         * Position sizing: 2.5% risk per trade, max 3 concurrent
-       - Backtest period: 2019-2025 (includes COVID crash, 2022 bear, 2023 recovery)
-       - Critical validation: how did the strategy perform during March 2020?
-       - Metrics: CAGR, Sharpe, max drawdown, win rate, profit factor
-       - Compare against CBOE S&P 500 Iron Condor Index (CNDR) as benchmark
-
-4.1.3  Implement butterfly and credit spread backtests
-       - Butterfly: OTM directional at MA targets
-       - Credit spread: 30-delta, 30 DTE
-       - Same period: 2019-2025
-       - Per-strategy metrics for comparison
-
-4.1.4  Walk-forward optimization
-       - Split data: 2019-2022 in-sample, 2023-2025 out-of-sample
-       - Optimize parameters on in-sample:
-         * Delta targets (20, 25, 30, 35)
-         * DTE (30, 45, 60)
-         * Profit target (40%, 50%, 60%)
-         * Stop loss (150%, 200%, 250%)
-       - Validate optimized parameters on out-of-sample
-       - If out-of-sample degrades significantly → overfitting detected, use defaults
-       - WARNING: options backtesting is slow — budget 1-2 weeks for compute
-
-4.1.5  Validate backtests against paper trading
-       - Compare backtest CAGR to annualized paper trading returns
-       - If within 2%: validation passed
-       - If >2% divergence: investigate:
-         * Execution slippage differences
-         * IV regime differences between backtest period and paper period
-         * Bugs in either implementation
+4.1.1  Compare backtest predictions to paper trading results
+       - Pull paper trading results from SQLite: actual CAGR, win rate, profit factor,
+         max drawdown by strategy
+       - Compare to Phase 1 Sprint 1.0 backtest results for same parameters
+       - If within 2% CAGR: validation passed — proceed to production parameters
+       - If >2% divergence: investigate root cause:
+         * Execution slippage (paper fills vs. backtest fills)
+         * IV regime differences (was paper trading period representative?)
+         * Logic divergence (does live code match backtest algorithm exactly?)
        - Document findings in DECISIONS.md
+
+4.1.2  Run updated walk-forward with expanded out-of-sample data
+       - Phase 1 used 2023-2025 as out-of-sample (limited data at the time)
+       - Now update: in-sample 2019-2022, out-of-sample 2023-present
+       - Re-run parameter sensitivity grid from Sprint 1.0.5 with more data
+       - Lock final production parameters — update `config/strategies.yaml`
+       - Run Config Translator (`scripts/generate_lean_config.py`) to regenerate
+         `backtests/lean/Config/StrategyConstants.cs` from updated YAML
+
+4.1.3  Lock production parameters
+       - Document final parameter rationale in DECISIONS.md
+       - Any deviation from Phase 1 defaults requires evidence:
+         * Backtest improvement on out-of-sample data
+         * Paper trading data supporting the change
+       - These are the parameters the live system will trade
 ```
 
 ---
@@ -222,7 +207,7 @@
              * How to switch back to paper mode
              * Who to call at IBKR if something goes wrong
        - [ ] Tax reporting module generates correct sample output
-       - [ ] $100K-$150K funded in IBKR account
+       - [ ] $400K funded in IBKR account
        - [ ] Portfolio Margin approved (requires $110K+ and application)
        - [ ] Options Level 3+ approved
 
@@ -286,11 +271,13 @@
 | Tradier Pro (if used) | $10/mo |
 | **Total Production** | **$220-425/mo** |
 
-Against $100K-$150K generating 8-15% ($8K-22.5K annually):
+Against $400K generating 8-15% ($32K-$60K annually):
 - Operating costs: $2,640-5,100/year
-- As percentage of gross returns: 12-64% at low end, 12-23% at high end
-- **Break-even requires roughly 3-5% annual return before OptiMind is "free"**
-- At target 10% return ($10K-15K): net income after costs $5K-12K/year
+- As percentage of gross returns: 4-16% of gross return range
+- **Break-even requires roughly 0.7-1.3% annual return before OptiMind is "free"**
+- At target 10% return ($40K): net income after costs ~$35K-37K/year
+- At target 8% return ($32K): net income after costs ~$27K-29K/year
+- At target 15% return ($60K): net income after costs ~$55K-57K/year
 
 ---
 
