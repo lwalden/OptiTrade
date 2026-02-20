@@ -110,7 +110,15 @@
            * ALL Anthropic SDK exceptions (APIError, AuthenticationError, APIConnectionError,
              RateLimitError, APIStatusError) must be caught in `ai/client.py`
            * None of these may propagate to the main trading loop
-           * On any exception: log full traceback, return None, caller uses quantitative fallback
+           * On any exception: log full traceback, return None, caller applies fallback ladder
+       - **Regime persistence (graceful degradation ladder):**
+           The `ai/regime.py` module applies this priority order when the API call fails:
+           1. Fresh AI response received → use it
+           2. API timeout/error, but last successful AI result is < 2 hours old →
+              use cached result (a brief API blip should not flip strategy weights)
+           3. No AI result < 2 hours old → fall back to quantitative regime baseline
+           Store last successful AI result and its timestamp in memory (cleared on restart).
+           This prevents a momentary API hiccup from destabilizing strategy allocation.
        - Budget cap: $50/mo initial, alert at $30
 
 3.2.2  Build regime analysis prompt system
@@ -331,7 +339,7 @@
 | AI regime detection doesn't outperform static | Medium | Medium | This is why we measure — if AI doesn't help, simplify. No ego about it. |
 | LLM hallucination produces bad trade recommendation | Low | Medium | AI recommends, risk manager enforces hard limits from `constants.py`. LLM cannot bypass pre-trade checks. Additionally: if AI returns invalid JSON structure, client returns None and system uses quantitative fallback. |
 | Claude API timeout or outage | Medium | Low | 5-second timeout fires; system automatically falls back to quantitative regime. AI failure is non-fatal by design. Emit `AI_FALLBACK_TRIGGERED` event for monitoring. |
-| AI non-determinism produces inconsistent regime flipping | Low | Low | System logs both `regime_quantitative` and `regime_ai`. Quantitative baseline provides stability even if AI oscillates. Only `REGIME_CHANGED` events trigger strategy weight adjustments, dampening noise. |
+| AI non-determinism produces inconsistent regime flipping | Low | Low | System logs both `regime_quantitative` and `regime_ai`. Regime persistence (2-hour cache) prevents a one-off API timeout from flipping strategy weights. Only `REGIME_CHANGED` events trigger allocation adjustments, dampening noise. |
 | Calendar spreads/straddles add complexity without proportional returns | Medium | Low | Track per-strategy metrics; disable underperformers |
 | MCP server security — portfolio data exposure | Low | High | MCP runs locally only; no network exposure; env var for mode control |
 | ORATS data feed issues | Low | Medium | Cache last known data; fall back to IBKR-derived IV if ORATS unavailable |

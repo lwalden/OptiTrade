@@ -297,10 +297,17 @@ Regime Engine (AI) → wraps Claude API call in asyncio.wait_for(timeout=5.0):
     → operative_regime = regime_ai (AI result used when available)
 
   [TIMEOUT (>5 seconds) or API error]:
-    → logs: "AI regime assessment unavailable — using quantitative fallback"
+    → logs: "AI regime assessment unavailable"
     → regime_ai = None
-    → operative_regime = regime_quantitative
-    → emits: AI_FALLBACK_TRIGGERED event (for monitoring dashboards)
+    → Check: is there a prior successful AI assessment < 2 hours old?
+        [YES — recent AI result available]:
+          → operative_regime = last_successful_regime_ai  (regime persistence)
+          → logs: "Using cached AI regime from {timestamp} — {regime}"
+          → emits: AI_CACHE_USED event
+        [NO — no recent AI result]:
+          → operative_regime = regime_quantitative
+          → logs: "No recent AI regime available — using quantitative baseline"
+          → emits: AI_FALLBACK_TRIGGERED event (for monitoring dashboards)
     → system continues operating normally — AI failure is NON-FATAL
 
   [Response received but invalid JSON / schema mismatch]:
@@ -314,6 +321,13 @@ If operative_regime changed (vs previous period) → publishes REGIME_CHANGED
 ```
 
 **Design principle:** The quantitative regime detector is NOT a backup — it is the permanent safety net. The AI layer enhances the assessment when available. The system must operate identically whether Claude responds in 1 second or is unreachable for hours. Any exception from the Anthropic SDK (APIError, AuthenticationError, RateLimitError) must be caught in `ai/client.py` and must not propagate to the main trading loop.
+
+**Regime persistence (graceful degradation ladder):**
+1. Fresh AI response (< 5s, valid JSON) → use `regime_ai` directly
+2. AI timeout/error, but prior successful AI assessment < 2 hours old → use cached `regime_ai` (regime persistence — a brief API blip should not flip strategy weights)
+3. No recent AI assessment → use `regime_quantitative` (pure rules-based baseline)
+
+The 2-hour window reflects the twice-daily (10:15 AM, 2:00 PM) assessment cadence. A timeout on the 10:15 AM call still has the 2:00 PM prior-day result available. A timeout on both intraday calls falls through to quantitative.
 
 ---
 
