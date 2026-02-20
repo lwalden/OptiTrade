@@ -108,4 +108,5 @@ Run multiple strategies concurrently in paper mode while enforcing all hard risk
 - [ ] No hard risk-limit violations during qualifying window.
 - [ ] Circuit-breaker behavior tested and documented.
 - [ ] Multi-strategy metrics captured.
+- [ ] Gate report produced at `reports/gates/phase2_paper_ops.json`.
 - [ ] Gate scoreboard updated in `PROGRESS.md`.

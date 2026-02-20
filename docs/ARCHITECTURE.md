@@ -286,7 +286,7 @@ If operative_regime changed → publishes REGIME_CHANGED
   → Strategy Weighting Engine adjusts allocation percentages
 ```
 
-**Regime fallback ladder (graceful degradation):**
+**Regime fallback ladder (graceful degradation / timeout-retry-fallback):**
 
 1. Fresh AI response (< 5s, valid JSON) → use `regime_ai`
 2. AI timeout/error, prior successful AI < 2 hours old → use cached `regime_ai`
