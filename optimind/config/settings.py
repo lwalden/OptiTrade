@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BeforeValidator, Field
+from pydantic import BeforeValidator, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,8 +40,20 @@ class Settings(BaseSettings):
         return self.ib_paper_port if self.mode == "paper" else self.ib_live_port
 
     # ── Claude API ───────────────────────────────────────────────────────────
-    anthropic_api_key: str = Field(default="", repr=False)
+    # SecretStr masks the value in logs and repr automatically
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""))
     claude_model: str = "claude-sonnet-4-6"
+
+    @model_validator(mode="after")
+    def _require_api_key_when_ai_enabled(self) -> "Settings":
+        if self.ai_regime_enabled and not self.anthropic_api_key.get_secret_value():
+            import warnings
+            warnings.warn(
+                "OPTIMIND_ANTHROPIC_API_KEY is not set but ai_regime_enabled=True. "
+                "AI regime detection will fail at runtime.",
+                stacklevel=2,
+            )
+        return self
 
     # ── Database ─────────────────────────────────────────────────────────────
     database_url: str = "sqlite+aiosqlite:///./data/optimind.db"

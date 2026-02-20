@@ -7,7 +7,7 @@ These define the data contracts between modules. Prefer these over raw dicts.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class OrderLeg(BaseModel):
     symbol: str
     right: Literal["C", "P"]
     strike: float
-    expiry: str          # "YYYYMMDD"
+    expiry: Annotated[str, Field(pattern=r"^\d{8}$")]  # "YYYYMMDD" — enforced by regex
     action: Literal["BUY", "SELL"]
     quantity: int
     limit_price: float | None = None
@@ -81,8 +81,8 @@ class Position(BaseModel):
     entry_credit: float
     current_pnl: float = 0.0
     current_pnl_pct: float = 0.0
-    max_profit: float
-    max_loss: float
+    max_profit: float = Field(gt=0)   # Always positive (max credit received)
+    max_loss: float = Field(lt=0)     # Always negative (max dollar loss, e.g. -500.0)
     greeks: PositionGreeks = Field(default_factory=PositionGreeks)
     dte: int
     threat_level: Literal["GREEN", "YELLOW", "RED"] = "GREEN"
