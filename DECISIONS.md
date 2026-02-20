@@ -66,3 +66,19 @@ Format: Lightweight
 **Decision:** Use uv (Astral) for Python dependency management and virtual environments.
 **Rationale:** Significantly faster than pip/Poetry; built-in venv management; compatible with pyproject.toml PEP 621 standard; growing ecosystem adoption.
 **Alternatives:** Poetry (more ecosystem momentum, slower), pip+venv (no lock file, manual), pipenv (largely superseded)
+
+---
+
+## ADR-008: hatchling as build backend
+**Date:** 2026-02-19
+**Decision:** Use hatchling as the pyproject.toml build backend.
+**Rationale:** Lightweight, PEP 621-compliant, zero config needed for a simple src-layout package. Pairs cleanly with uv. No plugin ecosystem needed at this stage.
+**Alternatives:** setuptools (more complex, legacy config), flit (simpler but less flexible), poetry-core (tied to Poetry workflow)
+
+---
+
+## ADR-009: pydantic-settings for configuration + SecretStr for API keys
+**Date:** 2026-02-19
+**Decision:** All tuneable configuration via `pydantic-settings` `BaseSettings` with `OPTIMIND_` env prefix. API keys (Anthropic, future ORATS) typed as `pydantic.SecretStr`.
+**Rationale:** `pydantic-settings` gives free env var parsing, `.env` file loading, and type validation with zero boilerplate. `SecretStr` ensures API keys are never leaked into logs, repr output, or serialized JSON automatically — no `repr=False` workarounds needed.
+**Alternatives:** `python-dotenv` + manual parsing (no validation), dynaconf (more features, more complexity), plain env vars with `os.getenv` (no type safety)
