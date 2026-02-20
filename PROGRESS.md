@@ -1,33 +1,51 @@
-# PROGRESS.md - Session Continuity
+﻿# PROGRESS.md - Session Continuity
 
-> Claude reads this FIRST every session. When adding a session note, keep only the 3 most recent -- drop older ones (git history is the archive).
+Claude reads this first every session.
+Keep only the three most recent session notes.
 
 **Phase:** 1 - Foundation
-**Last Updated:** 2026-02-19 23:30
+**Last Updated:** 2026-02-20 00:06
+
+## Gate Scoreboard
+
+Reference: `docs/VALIDATION_GATES.md`
+
+| Gate | Status | Notes |
+|---|---|---|
+| Phase 1 Strategy Viability | in_progress | LEAN backtest and slippage gate not complete |
+| Phase 2 Execution and Risk | pending | blocked on Phase 1 gate |
+| Phase 3 AI Value | pending | blocked on Phase 2 gate |
+| Phase 4 Live Readiness | pending | blocked on Phase 1-3 gates |
 
 ## Active Tasks
-- Sprint 1.1 PR open: feature/sprint-1.1-scaffold → main
+
+- Sprint 1.1 PR open: `feature/sprint-1.1-scaffold` -> `main`
+- Sprint 1.0 LEAN backtest + parameter validation not yet implemented
+- Documentation consistency hardening in progress
 
 ## Current State
-- `optimind/` package fully scaffolded (all dirs + __init__.py files)
-- `pyproject.toml` with uv, all Phase 1–3 deps, ruff/mypy/pytest configured
-- `optimind/core/constants.py` — hard-coded risk limits
-- `optimind/core/models.py` — Pydantic data contracts (Position, TradeSetup, etc.)
-- `optimind/config/settings.py` — Pydantic-settings, OPTIMIND_ prefix, paper/live port routing
-- `optimind/broker/ibkr/connection.py` — IBKRConnection with connect/disconnect/health_check/reconnect/context manager
-- `.env.example` — env var template
-- 23 unit tests passing (fully mocked, no IB Gateway required)
+
+- `optimind/` package scaffolded
+- `pyproject.toml` uses uv and project dependencies are defined
+- `optimind/core/constants.py` contains hard risk limits
+- `optimind/core/models.py` data contracts defined
+- `optimind/config/settings.py` supports `OPTIMIND_MODE` paper/live routing
+- `optimind/broker/ibkr/connection.py` implemented and tested
+- unit tests are passing for scaffold modules
 
 ## Blockers
-- None
+
+- Missing Phase 1 Sprint 1.0 LEAN artifacts (`backtests/lean/`, config translator, baseline backtest output)
 
 ## Next Priorities
-1. Merge Sprint 1.1 PR (human reviews)
-2. Sprint 1.2: options chain retrieval (`broker/ibkr/data.py`) + Greeks validation
-3. Sprint 1.3: IV rank calculation from 52-week history (`data/iv_surface.py`)
+
+1. Merge Sprint 1.1 PR after human review.
+2. Implement Sprint 1.0 LEAN backtest package and config translator.
+3. Run Phase 1 viability gate metrics and record in gate scoreboard.
+4. Continue Sprint 1.2 options chain and Greeks modules.
 
 ---
-<!-- Session notes: keep last 3. Older ones are in git history. Format: - [DATE] Phase [N]: [what was accomplished]. Key files: [files touched]. → [what's next] -->
-- [2026-02-19] Phase 1 Sprint 1.1: Scaffolded optimind/ package, pyproject.toml (uv), settings.py, constants.py, models.py, broker/ibkr/connection.py, 23 tests green. Key files: pyproject.toml, optimind/config/settings.py, optimind/broker/ibkr/connection.py, tests/. → Sprint 1.2: options chain + Greeks.
-- [2026-02-19] Phase 1: Ran /plan -- created strategy-roadmap.md, seeded DECISIONS.md (6 ADRs), populated CLAUDE.md MVP Goals. Key files: docs/strategy-roadmap.md, DECISIONS.md, CLAUDE.md, PROGRESS.md. → Begin Sprint 1.1: Python scaffold + IBKR connection.
-- [2026-02-19] Phase 1: Initialized AIAgentMinder governance layer. Key files: CLAUDE.md, PROGRESS.md, DECISIONS.md, .gitignore, .claude/ hooks. → Run /plan, then begin Python project scaffold.
+
+- [2026-02-20] Docs hardening: added canonical validation/cost/performance/parity docs and gate-first governance updates. Key files: `docs/VALIDATION_GATES.md`, `docs/PERFORMANCE_MODEL.md`, `docs/COST_MODEL.md`, `docs/BACKTEST_LIVE_PARITY.md`, `CLAUDE.md`, `PROGRESS.md`, `DECISIONS.md`. -> Align all phase and strategy docs to canonical values.
+- [2026-02-19] Phase 1 Sprint 1.1: Scaffolded package, settings, constants, models, IBKR connection, tests passing. Key files: `pyproject.toml`, `optimind/config/settings.py`, `optimind/broker/ibkr/connection.py`, `tests/`. -> Sprint 1.2 options chain and Greeks.
+- [2026-02-19] Governance initialized with session continuity docs. Key files: `CLAUDE.md`, `PROGRESS.md`, `DECISIONS.md`, `.claude/`. -> Build implementation scaffold.
