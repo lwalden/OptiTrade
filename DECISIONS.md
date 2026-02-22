@@ -117,6 +117,13 @@ Record significant decisions to prevent re-debating and documentation drift.
 **Rationale:** GitHub MCP enables PR/issue management directly in Claude without context switching. DB Hub enables direct DB introspection for SQLite (dev) and PostgreSQL (prod), aligned with ADR-006. Hugging Face deferred because the AI layer is Phase 3 scope and its value depends on measurable gaps the baseline regime classifier cannot close — decision criteria documented in `docs/PHASE_3_AI_LAYER.md`. Skipped servers have no dependency in the current or planned stack.
 **Alternatives considered:** All eight candidate servers evaluated; six rejected as redundant or out of scope (see session notes 2026-02-21).
 
+## ADR-017: GitHub MCP server endpoint
+**Status:** active
+**Date:** 2026-02-21
+**Decision:** Use the official remote HTTP endpoint `https://api.githubcopilot.com/mcp/` (GitHub-hosted, Go binary) instead of the deprecated npm package `@modelcontextprotocol/server-github`.
+**Rationale:** The npm package is deprecated; development moved to `github/github-mcp-server` (Go). The remote HTTP endpoint requires no Docker or local build, is always current, and authenticates via PAT bearer token header — the simplest path to a maintained server.
+**Alternatives considered:** Local Docker (`ghcr.io/github/github-mcp-server`), building Go binary from source, keeping deprecated npm package.
+
 ## ADR-015: Sprint 1.1 implemented before Sprint 1.0
 **Status:** active
 **Date:** 2026-02-20
