@@ -110,6 +110,13 @@ Record significant decisions to prevent re-debating and documentation drift.
 **Rationale:** avoids optimistic single-point estimates.
 **Alternatives:** single monthly cost number.
 
+## ADR-016: MCP server selection
+**Status:** active
+**Date:** 2026-02-21
+**Decision:** Add GitHub and DB Hub MCP servers to `.mcp.json` now. Defer Hugging Face to a Phase 3 entry evaluation. Skip Azure, Postman, Firecrawl, Microsoft Learn, and vscode-mcp-server.
+**Rationale:** GitHub MCP enables PR/issue management directly in Claude without context switching. DB Hub enables direct DB introspection for SQLite (dev) and PostgreSQL (prod), aligned with ADR-006. Hugging Face deferred because the AI layer is Phase 3 scope and its value depends on measurable gaps the baseline regime classifier cannot close — decision criteria documented in `docs/PHASE_3_AI_LAYER.md`. Skipped servers have no dependency in the current or planned stack.
+**Alternatives considered:** All eight candidate servers evaluated; six rejected as redundant or out of scope (see session notes 2026-02-21).
+
 ## ADR-015: Sprint 1.1 implemented before Sprint 1.0
 **Status:** active
 **Date:** 2026-02-20
