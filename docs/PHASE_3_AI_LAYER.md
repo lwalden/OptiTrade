@@ -86,6 +86,27 @@ Add AI-assisted regime interpretation and portfolio review while preserving dete
 - Stable Phase 2 paper execution and data collection.
 - Valid Anthropic API access and usage logging.
 
+## Phase 3 Evaluation Decision: Hugging Face MCP
+
+At Phase 3 entry, evaluate whether to add the Hugging Face MCP server as a supplemental AI tool.
+
+**What it enables:** Direct access to HF-hosted models (sentiment, volatility regime classifiers, NLP on macro/earnings text) without a separate Python inference pipeline. Would be used by the AI layer as a complement to Claude, not a replacement.
+
+**Decision criteria — add if ALL of the following are true:**
+
+1. Sprint 3.1 baseline regime classifier has a measurable accuracy gap that a specialized model could close.
+2. A suitable HF-hosted model exists for the target task (options-relevant sentiment or regime classification).
+3. Inference latency is acceptable for the trading loop cadence established in Phase 2.
+4. Incremental cost is within the Phase 3 cost model budget (`docs/COST_MODEL.md`).
+
+**Decision criteria — skip if ANY of the following are true:**
+
+- Claude-only regime interpretation meets or exceeds the ablation target in Sprint 3.4.
+- No suitable model exists without fine-tuning (fine-tuning is out of scope for Phase 3).
+- Latency or cost would breach Phase 3 constraints.
+
+**Process:** Record the decision as an ADR entry in `DECISIONS.md` at Phase 3 entry. If added, configure via `.mcp.json` following the same pattern as GitHub and DB Hub.
+
 ## Out of Scope
 
 - Unbounded autonomous trade execution from AI output.
