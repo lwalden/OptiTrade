@@ -6,7 +6,15 @@
       "Bash(uv run python:*)",
       "Bash(gh pr view:*)",
       "Bash(git restore:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v)",
+      "Read(//c/Users/lwald/AppData/Roaming/Claude/**)",
+      "Read(//c/Users/lwald/**)",
+      "Bash(python -m json.tool:*)",
+      "Bash(# The IDE opened a file with a strange path containing \"\"mcpServer.mcp.config.usrlocal.microsoftdocs\"\" # This looks like a VSCode MCP config file. Let me find it. find \"\"/c/Users/lwald/\"\" -name \"\"*.mcp.json\"\")",
+      "Bash(# The IDE opened file is \"\"mcpServer.mcp.config.usrlocal.microsoftdocs\\\\mcp\"\" - this looks like # a VSCode MCP config path. In VSCode, MCP servers for Claude extension are in: cat \"\"/c/Users/lwald/AppData/Roaming/Code/User/globalStorage/anthropic.claude-dev/settings/claude_mcp_settings.json\"\")"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
