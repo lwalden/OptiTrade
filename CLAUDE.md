@@ -18,12 +18,19 @@ If no context is injected, read files manually in this order.
 ### Starting a Session
 1. Read `PROGRESS.md` -- understand current state, active tasks, and priorities
 2. Check `git status` for uncommitted work
-3. Resume from "Next Priorities" in PROGRESS.md
+3. If `SPRINT.md` contains `**Status:** in-progress`, read it to understand active sprint state
+4. Resume from "Next Priorities" in PROGRESS.md
 
 > If no session context was injected above (you don't see PROGRESS.md content), read PROGRESS.md and DECISIONS.md manually before proceeding.
 
+### During a Session
+- Write code to files immediately -- don't accumulate changes in memory
+- Commit at natural checkpoints (compiles, tests pass, logical unit complete)
+- Prefer smaller, frequent commits over one large commit
+- Use Claude's native Tasks for complex multi-step work; keep PROGRESS.md as the durable record
+
 ### Ending a Session
-Run `/handoff` to write a clear briefing for the next session. Hooks handle timestamp and auto-commit automatically.
+Run `/handoff` to write a clear briefing for the next session. Hooks handle timestamp and auto-commit automatically. If a sprint is active, note sprint state in PROGRESS.md but do not modify SPRINT.md during handoff.
 
 ## Canonical Project Identity
 
