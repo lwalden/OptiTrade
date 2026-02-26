@@ -5,7 +5,7 @@
 
 ## Sprint 1.0-completion — LEAN Scaffold and Gate Evaluator
 
-**Status:** in-progress
+**Status:** in-progress (PR #9 open — awaiting human review and merge)
 **Branch:** feature/S1C-sprint-1.0-completion
 **Started:** 2026-02-25
 **Goal:** Complete remaining Sprint 1.0 deliverables so the Phase 1 gate can be run once the LEAN backtest executes.
@@ -15,16 +15,16 @@
 - Sprint 1.0 YAML configs are done (PR #8 open, awaiting human merge).
 - Sprint 1.1 scaffold is merged to main.
 - IBKR access is now available.
-- Scripts and LEAN scaffold are not yet implemented — these are the critical path to Phase 1 gate passage.
+- Scripts and LEAN scaffold implemented — PR #9 open for review.
 
 ### Issues
 
 | ID | Title | Type | Status |
 |---|---|---|---|
-| S1C-001 | `scripts/generate_lean_config.py` — config translator | feature | todo |
-| S1C-002 | `scripts/evaluate_phase1_gate.py` — gate evaluator | feature | todo |
-| S1C-003 | `backtests/lean/` C# LEAN algorithm scaffold | chore | todo |
-| S1C-004 | Tests for scripts | feature | todo |
+| S1C-001 | `scripts/generate_lean_config.py` — config translator | feature | done |
+| S1C-002 | `scripts/evaluate_phase1_gate.py` — gate evaluator | feature | done |
+| S1C-003 | `backtests/lean/` C# LEAN algorithm scaffold | chore | done |
+| S1C-004 | Tests for scripts | feature | done |
 
 ### Acceptance Criteria
 
