@@ -1,0 +1,26 @@
+{
+  "algorithm-type-name": "IronCondorAlgorithm",
+  "algorithm-language": "CSharp",
+  "algorithm-location": "Algorithm/IronCondorAlgorithm.cs",
+  "data-folder": "~/data",
+  "debugging": false,
+  "debugging-method": "LocalCmdline",
+  "log-handler": "CompositeLogHandler",
+  "messaging-handler": "QuantConnect.Messaging.Messaging",
+  "job-queue-handler": "QuantConnect.Queues.JobQueue",
+  "api-handler": "QuantConnect.Api.Api",
+  "results-destination-folder": "results",
+  "transaction-log": "",
+  "environment": "backtesting",
+  "environments": {
+    "backtesting": {
+      "live-mode": false,
+      "setup-handler": "QuantConnect.Lean.Engine.Setup.BacktestingSetupHandler",
+      "result-handler": "QuantConnect.Lean.Engine.Results.BacktestingResultHandler",
+      "data-feed-handler": "QuantConnect.Lean.Engine.DataFeeds.FileSystemDataFeed",
+      "real-time-handler": "QuantConnect.Lean.Engine.RealTime.BacktestingRealTimeHandler",
+      "history-provider": "QuantConnect.Lean.Engine.HistoricalData.SubscriptionDataReaderHistoryProvider",
+      "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler"
+    }
+  }
+}
