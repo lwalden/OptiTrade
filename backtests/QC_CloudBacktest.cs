@@ -70,7 +70,8 @@ namespace QuantConnect.Algorithm.CSharp
         private double   _oosStartEquity    = 0;
         private bool     _oosStartRecorded  = false;
 
-        private DateTime _lastScanDate = DateTime.MinValue;
+        private DateTime _lastScanDate  = DateTime.MinValue;
+        private bool     _diagLogged    = false;
 
         public override void Initialize()
         {
@@ -145,12 +146,39 @@ namespace QuantConnect.Algorithm.CSharp
             var calls = contracts.Where(c => c.Right == OptionRight.Call).OrderBy(c => c.Strike).ToList();
             var puts  = contracts.Where(c => c.Right == OptionRight.Put).OrderBy(c => c.Strike).ToList();
 
-            var shortCall = SelectByDelta(calls, SC.EntryShortDeltaTarget, SC.EntryShortDeltaTolerance);
+            // Log diagnostics once to confirm chain data quality
+            if (!_diagLogged && calls.Count > 0)
+            {
+                var sample = calls[calls.Count / 2];
+                Log($"DIAG: spot={spot:F2} contracts={contracts.Count} sampleDelta={sample.Greeks.Delta:F4} sampleIV={sample.ImpliedVolatility:F4} strike={sample.Strike}");
+                _diagLogged = true;
+            }
+
+            // Try delta-based selection; fall back to strike-based (~1 SD OTM) if Greeks are zero
+            bool deltaAvailable = calls.Any(c => Math.Abs((double)c.Greeks.Delta) > 0.001);
+
+            OptionContract shortCall, shortPut;
+            if (deltaAvailable)
+            {
+                shortCall = SelectByDelta(calls, SC.EntryShortDeltaTarget, SC.EntryShortDeltaTolerance);
+                shortPut  = SelectByDelta(puts,  SC.EntryShortDeltaTarget, SC.EntryShortDeltaTolerance);
+            }
+            else
+            {
+                // 1 SD ≈ spot * IV * sqrt(DTE/365); approximate with 7% OTM for 45 DTE
+                // Select the OTM call/put strike closest to spot * 1.07 / spot * 0.93
+                double callTarget = spot * 1.07;
+                double putTarget  = spot * 0.93;
+                shortCall = calls.OrderBy(c => Math.Abs((double)c.Strike - callTarget)).FirstOrDefault();
+                shortPut  = puts.OrderBy(c => Math.Abs((double)c.Strike - putTarget)).FirstOrDefault();
+                if (shortCall != null && shortPut != null)
+                    Log($"DIAG: Using strike-based selection (no Greeks). callStrike={shortCall.Strike} putStrike={shortPut.Strike}");
+            }
+
             if (shortCall == null) return;
             var longCall = calls.FirstOrDefault(c => c.Strike == shortCall.Strike + SC.EntryWingWidthSpy);
             if (longCall == null) return;
 
-            var shortPut = SelectByDelta(puts, SC.EntryShortDeltaTarget, SC.EntryShortDeltaTolerance);
             if (shortPut == null) return;
             var longPut = puts.FirstOrDefault(c => c.Strike == shortPut.Strike - SC.EntryWingWidthSpy);
             if (longPut == null) return;
@@ -290,8 +318,14 @@ namespace QuantConnect.Algorithm.CSharp
 
         private OptionContract SelectByDelta(List<OptionContract> contracts, double target, double tolerance)
         {
-            return contracts
+            // Try tight tolerance first, then widen to 0.10 as fallback
+            var result = contracts
                 .Where(c => Math.Abs(Math.Abs((double)c.Greeks.Delta) - target) <= tolerance)
+                .OrderBy(c => Math.Abs(Math.Abs((double)c.Greeks.Delta) - target))
+                .FirstOrDefault();
+            if (result != null) return result;
+            return contracts
+                .Where(c => Math.Abs(Math.Abs((double)c.Greeks.Delta) - target) <= 0.10)
                 .OrderBy(c => Math.Abs(Math.Abs((double)c.Greeks.Delta) - target))
                 .FirstOrDefault();
         }
