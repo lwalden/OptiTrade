@@ -26,7 +26,7 @@ using QuantConnect.Securities.Option;
 namespace QuantConnect.Algorithm.CSharp
 {
     // ── Inlined strategy constants (source: optimind/config/strategies.yaml) ──
-    // parameter_hash: 749a962b56b4767963b66a0611fdebda9dc879ea3f68405fa16813b93c8ec36c
+    // parameter_hash: fe43459060b2bf2ac80a339fa47dd8edaed08b520446d9faa24c810fd244f557
     public static class SC
     {
         public const int    EntryDteMin                  = 30;
@@ -35,7 +35,7 @@ namespace QuantConnect.Algorithm.CSharp
         public const double EntryShortDeltaTarget        = 0.16;
         public const double EntryShortDeltaTolerance     = 0.04;
         public const int    EntryWingWidthSpy            = 5;
-        public const double EntryMinCreditToWidthRatio   = 0.20;
+        public const double EntryMinCreditToWidthRatio   = 0.15;
         public const double ExitProfitTargetPct          = 0.50;
         public const double ExitStopLossCreditMultiple   = 2.0;
         public const int    ExitDteMandatoryClose        = 7;
@@ -47,7 +47,7 @@ namespace QuantConnect.Algorithm.CSharp
         public const string DateRangeEnd                 = "2025-12-31";
         public const string InSampleEnd                  = "2022-12-31";
         public const string OosStart                     = "2023-01-01";
-        public const string ParameterHash               = "749a962b56b4767963b66a0611fdebda9dc879ea3f68405fa16813b93c8ec36c";
+        public const string ParameterHash               = "fe43459060b2bf2ac80a339fa47dd8edaed08b520446d9faa24c810fd244f557";
     }
 
     public class IronCondorAlgorithm : QCAlgorithm
