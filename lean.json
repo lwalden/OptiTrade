@@ -1,0 +1,8 @@
+{
+    "organization-id": "local",
+    "lean-manager-type": "LocalLeanManager",
+    "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+    "id": "Local",
+    "data-folder": "data",
+    "file-database-last-update": "02/27/2026 13:50:13"
+}

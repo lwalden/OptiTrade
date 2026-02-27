@@ -95,3 +95,8 @@ data/cache/
 backtests/lean/raw/
 backtests/lean/**/*.csv
 backtests/lean/**/*.zip
+
+# LEAN backtest outputs
+backtests/lean/backtests/
+backtests/lean/results/*.json
+data/
