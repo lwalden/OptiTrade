@@ -88,7 +88,7 @@ namespace QuantConnect.Algorithm.CSharp
             var option = AddOption("SPY", Resolution.Daily);
             option.SetFilter(u => u
                 .Expiration(TimeSpan.FromDays(SC.EntryDteMin), TimeSpan.FromDays(SC.EntryDteMax))
-                .Strikes(-10, 10));
+                .Strikes(-25, 25));
             _spyOption = option.Symbol;
 
             SetSecurityInitializer(s => {
@@ -149,8 +149,11 @@ namespace QuantConnect.Algorithm.CSharp
             // Log diagnostics once to confirm chain data quality
             if (!_diagLogged && calls.Count > 0)
             {
-                var sample = calls[calls.Count / 2];
-                Log($"DIAG: spot={spot:F2} contracts={contracts.Count} sampleDelta={sample.Greeks.Delta:F4} sampleIV={sample.ImpliedVolatility:F4} strike={sample.Strike}");
+                var minDelta = calls.Min(c => Math.Abs((double)c.Greeks.Delta));
+                var maxDelta = calls.Max(c => Math.Abs((double)c.Greeks.Delta));
+                var minStrike = calls.Min(c => c.Strike);
+                var maxStrike = calls.Max(c => c.Strike);
+                Log($"DIAG: spot={spot:F2} contracts={contracts.Count} calls={calls.Count} deltaRange=[{minDelta:F3},{maxDelta:F3}] strikeRange=[{minStrike},{maxStrike}]");
                 _diagLogged = true;
             }
 
