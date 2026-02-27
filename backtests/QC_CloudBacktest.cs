@@ -18,6 +18,8 @@ using QuantConnect.Algorithm;
 using QuantConnect.Data;
 using QuantConnect.Data.Market;
 using QuantConnect.Orders;
+using QuantConnect.Orders.Fees;
+using QuantConnect.Orders.Slippage;
 using QuantConnect.Securities;
 using QuantConnect.Securities.Option;
 
@@ -90,8 +92,8 @@ namespace QuantConnect.Algorithm.CSharp
             _spyOption = option.Symbol;
 
             SetSecurityInitializer(s => {
-                s.SetFeeModel(new ConstantFeeModel(SC.CommissionPerContractUsd));
-                s.SetSlippageModel(new ConstantSlippageModel(SC.SlippagePerLegUsd));
+                s.SetFeeModel(new ConstantFeeModel((decimal)SC.CommissionPerContractUsd));
+                s.SetSlippageModel(new ConstantSlippageModel((decimal)SC.SlippagePerLegUsd));
             });
 
             Log($"parameter_hash: {SC.ParameterHash}");
@@ -105,12 +107,12 @@ namespace QuantConnect.Algorithm.CSharp
 
             if (!_isEndRecorded && Time.Date >= _isEnd)
             {
-                _portfolioAtIsEnd = Portfolio.TotalPortfolioValue;
+                _portfolioAtIsEnd = (double)Portfolio.TotalPortfolioValue;
                 _isEndRecorded    = true;
             }
             if (!_oosStartRecorded && Time.Date >= DateTime.Parse(SC.OosStart))
             {
-                _oosStartEquity   = Portfolio.TotalPortfolioValue;
+                _oosStartEquity   = (double)Portfolio.TotalPortfolioValue;
                 _oosStartRecorded = true;
             }
 
@@ -241,7 +243,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         public override void OnEndOfAlgorithm()
         {
-            double final   = Portfolio.TotalPortfolioValue;
+            double final   = (double)Portfolio.TotalPortfolioValue;
             double initial = SC.InitialCapitalUsd;
 
             double years   = (EndDate - StartDate).TotalDays / 365.25;
@@ -313,7 +315,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         private void TrackDrawdown()
         {
-            double eq = Portfolio.TotalPortfolioValue;
+            double eq = (double)Portfolio.TotalPortfolioValue;
             if (eq > _peakPortfolio) _peakPortfolio = eq;
             if (_peakPortfolio > 0)
             {
