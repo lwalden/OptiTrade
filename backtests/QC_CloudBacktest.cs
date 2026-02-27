@@ -86,7 +86,6 @@ namespace QuantConnect.Algorithm.CSharp
 
             var option = AddOption("SPY", Resolution.Daily);
             option.SetFilter(u => u
-                .IncludeWeeklys()
                 .Expiration(TimeSpan.FromDays(SC.EntryDteMin), TimeSpan.FromDays(SC.EntryDteMax))
                 .Strikes(-10, 10));
             _spyOption = option.Symbol;
