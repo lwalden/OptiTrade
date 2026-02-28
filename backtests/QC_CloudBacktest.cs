@@ -83,9 +83,11 @@ namespace QuantConnect.Algorithm.CSharp
 
             _isEnd = DateTime.Parse(SC.InSampleEnd);
 
-            AddEquity("SPY", Resolution.Daily);
+            AddEquity("SPY", Resolution.Minute);
 
-            var option = AddOption("SPY", Resolution.Daily);
+            // Use Minute resolution for options — QC daily options data has gaps pre-2021.
+            // OnData still only acts on Wednesdays so frequency is the same; data coverage is better.
+            var option = AddOption("SPY", Resolution.Minute);
             option.SetFilter(u => u
                 .Expiration(TimeSpan.FromDays(SC.EntryDteMin), TimeSpan.FromDays(SC.EntryDteMax))
                 .Strikes(-25, 25));
@@ -346,8 +348,18 @@ namespace QuantConnect.Algorithm.CSharp
             return sc - lc + sp - lp;
         }
 
-        private double Mid(OptionContract c)    => (double)(c.BidPrice + c.AskPrice) / 2.0;
-        private double MidSec(Security s)        => (double)(s.BidPrice + s.AskPrice) / 2.0;
+        private double Mid(OptionContract c)
+        {
+            if (c.BidPrice > 0 && c.AskPrice > 0)
+                return (double)(c.BidPrice + c.AskPrice) / 2.0;
+            return (double)c.LastPrice;  // fallback when bid/ask not populated
+        }
+        private double MidSec(Security s)
+        {
+            if (s.BidPrice > 0 && s.AskPrice > 0)
+                return (double)(s.BidPrice + s.AskPrice) / 2.0;
+            return (double)s.Price;
+        }
 
         private void TrackDrawdown()
         {
