@@ -72,6 +72,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         private DateTime _lastScanDate  = DateTime.MinValue;
         private bool     _diagLogged    = false;
+        private DateTime _lastNoChainWarn = DateTime.MinValue;
 
         public override void Initialize()
         {
@@ -124,12 +125,25 @@ namespace QuantConnect.Algorithm.CSharp
                 return;
             }
 
-            if (Time.DayOfWeek != DayOfWeek.Wednesday || Time.Date <= _lastScanDate)
+            // Scan any weekday — Wednesday preferred but fall through to Th/Fr if no chain that day.
+            // Limit to one scan attempt per day.
+            if (Time.DayOfWeek == DayOfWeek.Saturday || Time.DayOfWeek == DayOfWeek.Sunday)
                 return;
+            if (Time.Date <= _lastScanDate)
+                return;
+
+            _lastScanDate = Time.Date;  // mark scanned so we don't re-scan intra-day on minute bars
 
             if (!data.OptionChains.ContainsKey(_spyOption))
+            {
+                // Warn at most once per month to diagnose data gaps without flooding logs
+                if ((Time.Date - _lastNoChainWarn).TotalDays >= 30)
+                {
+                    Log($"WARN: no option chain on {Time.Date:yyyy-MM-dd} ({Time.DayOfWeek})");
+                    _lastNoChainWarn = Time.Date;
+                }
                 return;
-
+            }
             TryEnterCondor(data.OptionChains[_spyOption]);
         }
 
@@ -217,7 +231,6 @@ namespace QuantConnect.Algorithm.CSharp
                 LongPut       = longPut.Symbol,
             };
 
-            _lastScanDate  = Time.Date;
             _totalSlippage += SC.SlippagePerLegUsd * 4;
 
             int dte = (expiry.Value.Date - Time.Date).Days;
