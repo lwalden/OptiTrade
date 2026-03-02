@@ -91,7 +91,7 @@ namespace QuantConnect.Algorithm.CSharp
             var option = AddOption("SPY", Resolution.Minute);
             option.SetFilter(u => u
                 .Expiration(TimeSpan.FromDays(SC.EntryDteMin), TimeSpan.FromDays(SC.EntryDteMax))
-                .Strikes(-25, 25));
+                .Strikes(-40, 40));
             _spyOption = option.Symbol;
 
             SetSecurityInitializer(s => {
