@@ -70,8 +70,8 @@ namespace QuantConnect.Algorithm.CSharp
         private double   _oosStartEquity    = 0;
         private bool     _oosStartRecorded  = false;
 
-        private DateTime _lastScanDate  = DateTime.MinValue;
-        private bool     _diagLogged    = false;
+        private DateTime _lastScanDate   = DateTime.MinValue;
+        private DateTime _lastDiagDate   = DateTime.MinValue;
         private DateTime _lastNoChainWarn = DateTime.MinValue;
 
         public override void Initialize()
@@ -154,23 +154,23 @@ namespace QuantConnect.Algorithm.CSharp
             double spot = (double)underlying;
 
             var expiry = SelectExpiry(chain);
-            if (expiry == null) return;
+            if (expiry == null) { Log($"SKIP {Time.Date:yyyy-MM-dd}: no expiry in DTE range"); return; }
 
             var contracts = chain.Where(c => c.Expiry.Date == expiry.Value.Date).ToList();
-            if (contracts.Count < 4) return;
+            if (contracts.Count < 4) { Log($"SKIP {Time.Date:yyyy-MM-dd}: only {contracts.Count} contracts for expiry {expiry.Value:yyyy-MM-dd}"); return; }
 
             var calls = contracts.Where(c => c.Right == OptionRight.Call).OrderBy(c => c.Strike).ToList();
             var puts  = contracts.Where(c => c.Right == OptionRight.Put).OrderBy(c => c.Strike).ToList();
 
-            // Log diagnostics once to confirm chain data quality
-            if (!_diagLogged && calls.Count > 0)
+            // Log diagnostics quarterly
+            if (calls.Count > 0 && (Time.Date - _lastDiagDate).TotalDays >= 90)
             {
-                var minDelta = calls.Min(c => Math.Abs((double)c.Greeks.Delta));
-                var maxDelta = calls.Max(c => Math.Abs((double)c.Greeks.Delta));
+                var minDelta  = calls.Min(c => Math.Abs((double)c.Greeks.Delta));
+                var maxDelta  = calls.Max(c => Math.Abs((double)c.Greeks.Delta));
                 var minStrike = calls.Min(c => c.Strike);
                 var maxStrike = calls.Max(c => c.Strike);
                 Log($"DIAG: spot={spot:F2} contracts={contracts.Count} calls={calls.Count} deltaRange=[{minDelta:F3},{maxDelta:F3}] strikeRange=[{minStrike},{maxStrike}]");
-                _diagLogged = true;
+                _lastDiagDate = Time.Date;
             }
 
             // Try delta-based selection; fall back to strike-based (~1 SD OTM) if Greeks are zero
@@ -194,15 +194,27 @@ namespace QuantConnect.Algorithm.CSharp
                     Log($"DIAG: Using strike-based selection (no Greeks). callStrike={shortCall.Strike} putStrike={shortPut.Strike}");
             }
 
-            if (shortCall == null) return;
-            var longCall = calls.FirstOrDefault(c => c.Strike == shortCall.Strike + SC.EntryWingWidthSpy);
-            if (longCall == null) return;
+            if (shortCall == null) { Log($"SKIP {Time.Date:yyyy-MM-dd}: no short call near delta {SC.EntryShortDeltaTarget}"); return; }
+            // Pick the nearest call strike at or above shortCall + wing width (exact match preferred)
+            var longCall = calls
+                .Where(c => c.Strike >= shortCall.Strike + SC.EntryWingWidthSpy)
+                .OrderBy(c => c.Strike)
+                .FirstOrDefault();
+            if (longCall == null) { Log($"SKIP {Time.Date:yyyy-MM-dd}: no long call >= {shortCall.Strike + SC.EntryWingWidthSpy}"); return; }
 
-            if (shortPut == null) return;
-            var longPut = puts.FirstOrDefault(c => c.Strike == shortPut.Strike - SC.EntryWingWidthSpy);
-            if (longPut == null) return;
+            if (shortPut == null) { Log($"SKIP {Time.Date:yyyy-MM-dd}: no short put near delta {SC.EntryShortDeltaTarget}"); return; }
+            // Pick the nearest put strike at or below shortPut - wing width (exact match preferred)
+            var longPut = puts
+                .Where(c => c.Strike <= shortPut.Strike - SC.EntryWingWidthSpy)
+                .OrderByDescending(c => c.Strike)
+                .FirstOrDefault();
+            if (longPut == null) { Log($"SKIP {Time.Date:yyyy-MM-dd}: no long put <= {shortPut.Strike - SC.EntryWingWidthSpy}"); return; }
 
-            if (shortPut.Strike >= (decimal)spot || shortCall.Strike <= (decimal)spot) return;
+            if (shortPut.Strike >= (decimal)spot || shortCall.Strike <= (decimal)spot)
+            {
+                Log($"SKIP {Time.Date:yyyy-MM-dd}: strikes not OTM (put={shortPut.Strike} call={shortCall.Strike} spot={spot:F2})");
+                return;
+            }
 
             double credit = Mid(shortCall) - Mid(longCall) + Mid(shortPut) - Mid(longPut);
             if (credit < SC.EntryWingWidthSpy * SC.EntryMinCreditToWidthRatio)
