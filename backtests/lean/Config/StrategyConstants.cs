@@ -1,6 +1,6 @@
 // StrategyConstants.cs — AUTO-GENERATED. Do not edit manually.
 // Source: optimind/config/strategies.yaml
-// parameter_hash: fe43459060b2bf2ac80a339fa47dd8edaed08b520446d9faa24c810fd244f557
+// parameter_hash: 56cb56473a99afeca50cc3359d6d6bff5bd0ba73bd35d682db10c9a0709fadc5
 //
 // Regenerate with: uv run python scripts/generate_lean_config.py
 
@@ -14,7 +14,7 @@ namespace OptiMind.Backtests
         public const double EntryShortDeltaTarget = 0.16d;
         public const double EntryShortDeltaTolerance = 0.04d;
         public const int EntryWingWidthSpx = 50;
-        public const int EntryWingWidthSpy = 5;
+        public const int EntryWingWidthSpy = 10;
         public const int EntryWingWidthQqq = 5;
         public const int EntryWingWidthIwm = 5;
         public const double EntryMinCreditToWidthRatio = 0.15d;
@@ -30,7 +30,7 @@ namespace OptiMind.Backtests
         public const string ExitDteManagement_1_Action = "evaluate_or_close";
         public const int ExitDteManagement_2_Dte = 7;
         public const string ExitDteManagement_2_Action = "close";
-        public const int SizingDefaultContracts = 1;
+        public const int SizingDefaultContracts = 5;
         public const int SizingMaxContracts = 5;
         public const string SmartPricingEntryStart = "mid";
         public const double SmartPricingEntryStepPct = 0.1d;
@@ -48,6 +48,6 @@ namespace OptiMind.Backtests
         public const double BacktestCommissionPerContractUsd = 0.65d;
         public const int BacktestInitialCapitalUsd = 400000;
 
-        public const string ParameterHash = "fe43459060b2bf2ac80a339fa47dd8edaed08b520446d9faa24c810fd244f557";
+        public const string ParameterHash = "56cb56473a99afeca50cc3359d6d6bff5bd0ba73bd35d682db10c9a0709fadc5";
     }
 }
