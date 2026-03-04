@@ -225,13 +225,13 @@ namespace QuantConnect.Algorithm.CSharp
 
             var legs = new List<Leg>
             {
-                Leg.Create(shortCall.Symbol, -SC.SizingDefaultContracts),
-                Leg.Create(longCall.Symbol,  +SC.SizingDefaultContracts),
-                Leg.Create(shortPut.Symbol,  -SC.SizingDefaultContracts),
-                Leg.Create(longPut.Symbol,   +SC.SizingDefaultContracts),
+                Leg.Create(shortCall.Symbol, -1),
+                Leg.Create(longCall.Symbol,  +1),
+                Leg.Create(shortPut.Symbol,  -1),
+                Leg.Create(longPut.Symbol,   +1),
             };
 
-            ComboMarketOrder(legs, 1, asynchronous: false);
+            ComboMarketOrder(legs, SC.SizingDefaultContracts, asynchronous: false);
 
             _openPosition = new IronCondorPosition
             {
@@ -243,7 +243,7 @@ namespace QuantConnect.Algorithm.CSharp
                 LongPut       = longPut.Symbol,
             };
 
-            _totalSlippage += SC.SlippagePerLegUsd * 4;
+            _totalSlippage += SC.SlippagePerLegUsd * 4 * SC.SizingDefaultContracts;
 
             int dte = (expiry.Value.Date - Time.Date).Days;
             Log($"ENTRY: {shortPut.Strike}P/{shortCall.Strike}C exp={expiry.Value:yyyy-MM-dd} credit={credit:F2} DTE={dte}");
@@ -280,14 +280,14 @@ namespace QuantConnect.Algorithm.CSharp
             var pos = _openPosition;
             var legs = new List<Leg>
             {
-                Leg.Create(pos.ShortCall, +SC.SizingDefaultContracts),
-                Leg.Create(pos.LongCall,  -SC.SizingDefaultContracts),
-                Leg.Create(pos.ShortPut,  +SC.SizingDefaultContracts),
-                Leg.Create(pos.LongPut,   -SC.SizingDefaultContracts),
+                Leg.Create(pos.ShortCall, +1),
+                Leg.Create(pos.LongCall,  -1),
+                Leg.Create(pos.ShortPut,  +1),
+                Leg.Create(pos.LongPut,   -1),
             };
 
-            ComboMarketOrder(legs, 1, asynchronous: false);
-            _totalSlippage += SC.SlippagePerLegUsd * 4;
+            ComboMarketOrder(legs, SC.SizingDefaultContracts, asynchronous: false);
+            _totalSlippage += SC.SlippagePerLegUsd * 4 * SC.SizingDefaultContracts;
 
             double pnl = pos.InitialCredit - EstimatePositionValue(pos);
             if (pnl > 0) { _grossProfit += pnl; _winningTrades++; }
