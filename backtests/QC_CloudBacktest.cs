@@ -289,7 +289,8 @@ namespace QuantConnect.Algorithm.CSharp
             ComboMarketOrder(legs, SC.SizingDefaultContracts, asynchronous: false);
             _totalSlippage += SC.SlippagePerLegUsd * 4 * SC.SizingDefaultContracts;
 
-            double pnl = pos.InitialCredit - EstimatePositionValue(pos);
+            // Scale P&L by contract count so it's in the same units as _totalSlippage
+            double pnl = (pos.InitialCredit - EstimatePositionValue(pos)) * SC.SizingDefaultContracts;
             if (pnl > 0) { _grossProfit += pnl; _winningTrades++; }
             else           _grossLoss   -= pnl;
 
