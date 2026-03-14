@@ -125,6 +125,7 @@ Sprint 1.1 (runtime scaffold) was implemented before Sprint 1.0 (LEAN backtest).
 - QuantConnect account and .NET SDK (Sprint 1.0).
 - IBKR paper account and market data subscription.
 - Python 3.12 environment and uv workflow.
+- n8n (optional, local) for Gate Evaluation Runner workflow (ADR-019). Automates gate script execution and report delivery via email. Not blocking — gate scripts can be run manually.
 
 ## Cost Expectation
 
