@@ -124,6 +124,31 @@ Record significant decisions to prevent re-debating and documentation drift.
 **Rationale:** The npm package is deprecated; development moved to `github/github-mcp-server` (Go). The remote HTTP endpoint requires no Docker or local build, is always current, and authenticates via PAT bearer token header — the simplest path to a maintained server.
 **Alternatives considered:** Local Docker (`ghcr.io/github/github-mcp-server`), building Go binary from source, keeping deprecated npm package.
 
+## ADR-018: Iron condor wing width 5pt → 10pt, sizing 1 → 5 contracts
+**Status:** active
+**Date:** 2026-03-03
+**Decision:** Increase SPY iron condor wing width from 5 points to 10 points, and default sizing from 1 contract to 5 contracts per spread.
+**Rationale:** Phase 1 gate backtesting (112 trades, 2019-2025) showed the strategy is profitable on a per-trade basis (68.75% win rate, profit factor 1.33) but fails the slippage drag gate (42.83% vs ≤30% threshold) and CAGR gate (-0.57% vs >0%). Root cause: at 5-point wings, gross credit per trade (~$50-75 gross P&L target) is too thin relative to fixed friction ($0.65 commission × 4 legs × N contracts). Widening to 10-point wings roughly doubles collected credit (~$2.00 vs ~$1.00) while increasing max risk proportionally. Scaling to 5 contracts multiplies gross P&L by 5× while friction scales proportionally — the combination brings projected slippage drag to ~14%, well below the 30% threshold, and should turn CAGR positive. The `max_contracts: 5` cap in strategies.yaml already anticipated this sizing.
+**Alternatives considered:** Keeping 5-point wings and reducing commission model (not realistic — IBKR charges are fixed); switching to SPX (100× multiplier solves friction mathematically but changes risk profile and capital requirements significantly, deferred to Phase 2); alternative data sources (assessed — data gaps were algorithm bugs, not missing data).
+
+## ADR-019: n8n for operations automation (Phase 2+)
+**Status:** active
+**Date:** 2026-03-14
+**Decision:** Use n8n (self-hosted, local for dev, Azure for prod) as the operations automation layer for trade notifications, reporting, health monitoring, and gate evaluation. Uses built-in Anthropic Chat Model node for Claude API integration. Workflow JSON version-controlled in `d:\Source\n8n-automation-hub` repo.
+**Rationale:** OptiMind's event-driven architecture produces events (trade execution, risk alerts, position updates) that need external notification and reporting. n8n provides visual workflow orchestration with webhook triggers, cron scheduling, and direct Claude API integration without adding Python dependencies to the trading runtime. Keeps the core trading loop clean (Python/async) while offloading ops concerns to a dedicated workflow engine. The Gate Evaluation Runner workflow is useful immediately in Phase 1 for automating gate script execution and report delivery.
+**Alternatives considered:** Custom Python scripts for each notification (tight coupling, no visual debugging), Prefect/Airflow (heavyweight for this use case), manual operations (does not scale with absentee-owner model).
+
+**Planned workflows:**
+
+| Workflow | Trigger | Phase |
+|----------|---------|-------|
+| Gate Evaluation Runner | Manual | Phase 1 (now) |
+| Trade Alerts | Webhook (from OptiMind events) | Phase 2 |
+| Daily P&L Report | Cron (market close + 30min) | Phase 2 |
+| Risk Alert Escalation | Webhook (from risk monitor) | Phase 2 |
+| IBKR Health Monitor | Cron (1min during market hours) | Phase 2 |
+| Market Regime Monitor | Cron (daily pre-market) | Phase 3 |
+
 ## ADR-015: Sprint 1.1 implemented before Sprint 1.0
 **Status:** active
 **Date:** 2026-02-20
