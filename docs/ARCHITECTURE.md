@@ -56,6 +56,7 @@ Mode is controlled only by `OPTIMIND_MODE`.
 | Backtesting | LEAN CLI (`pip install lean`) | C# LEAN engine orchestration |
 | Testing | `pytest`, `pytest-asyncio`, `hypothesis`, `pytest-cov` | Test suite |
 | Quality | `ruff`, `mypy` | Linting and type checking |
+| Ops Automation | n8n (self-hosted) | Workflow orchestration for notifications, reports, health monitoring (ADR-019) |
 
 ---
 
@@ -618,6 +619,29 @@ During Phases 1-3 (paper trading only), the ~80ms local WA latency is acceptable
 - No credentials committed to the repo.
 - Dashboard exposure restricted (HTTPS + auth).
 - Explicit safeguards against accidental live execution (`OPTIMIND_MODE` must be set explicitly).
+
+---
+
+## Operations Automation (n8n)
+
+n8n provides workflow orchestration for operational concerns that sit outside the core trading loop. The trading runtime (Python/async) publishes events; n8n workflows consume them via webhooks and handle notification, reporting, and monitoring tasks. See ADR-019.
+
+**Development:** n8n runs locally (v2.11.4, `n8n start` on port 5678). Workflow JSON version-controlled in `d:\Source\n8n-automation-hub`.
+
+**Production:** n8n on Azure VM (same region as OptiMind for low-latency webhook delivery).
+
+**Integration pattern:** OptiMind's event bus publishes to n8n via HTTP webhook endpoints. n8n workflows are triggered by these events and use the built-in Anthropic Chat Model node for Claude-powered analysis (e.g., market regime summaries, P&L commentary).
+
+| Workflow | Trigger | Description | Phase |
+|----------|---------|-------------|-------|
+| Gate Evaluation Runner | Manual | Execute gate scripts, format results, email report | Phase 1 |
+| Trade Alerts | Webhook (ORDER_FILLED, POSITION_CLOSED) | Format trade notification, email | Phase 2 |
+| Daily P&L Report | Cron (market close + 30min) | Query positions DB, calculate P&L, email report | Phase 2 |
+| Risk Alert Escalation | Webhook (CIRCUIT_BREAKER_FIRED) | Urgent notification on loss limit breach | Phase 2 |
+| IBKR Health Monitor | Cron (1min during market hours) | Check IBKR connection, alert on disconnect | Phase 2 |
+| Market Regime Monitor | Cron (daily pre-market) | Check VIX/IV, Claude-powered regime briefing | Phase 3 |
+
+**Design constraint:** n8n workflows must never modify trading state. They are read-only consumers of events and database snapshots. All trade decisions remain in the Python runtime.
 
 ---
 

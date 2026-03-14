@@ -26,12 +26,12 @@ iron_condor:
 
     # Wing width: distance from short to long strike (in points for SPX, dollars for ETFs)
     wing_width_spx: 50             # SPX points
-    wing_width_spy: 5              # SPY dollars
+    wing_width_spy: 10             # SPY dollars
     wing_width_qqq: 5              # QQQ dollars
     wing_width_iwm: 5              # IWM dollars
 
     # Minimum credit to collect (as fraction of wing width / max loss)
-    min_credit_to_width_ratio: 0.20   # require >= 20% of wing width as credit
+    min_credit_to_width_ratio: 0.15   # require >= 15% of wing width as credit ($1.50 min for $10 wings)
 
     # IV Rank filter: only enter if IVR is in range
     ivr_min: 25                    # do not enter in crushed vol environments
@@ -61,7 +61,7 @@ iron_condor:
   sizing:
     # Number of contracts per position (Phase 1 paper baseline)
     # Actual sizing is risk-based: see risk_limits.yaml and constants.py
-    default_contracts: 1
+    default_contracts: 5
     max_contracts: 5               # hard cap per position in Phase 1
 
   # ── SmartPricing ─────────────────────────────────────────────────────────────
