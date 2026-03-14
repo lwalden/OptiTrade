@@ -93,10 +93,26 @@ Run multiple strategies concurrently in paper mode while enforcing all hard risk
 
 ---
 
+## n8n Operations Workflows (Phase 2)
+
+n8n workflows provide operational automation without adding complexity to the trading runtime. See ADR-019 and `docs/ARCHITECTURE.md` § Operations Automation.
+
+| Workflow | Trigger | Deliverable Sprint |
+|----------|---------|-------------------|
+| Trade Alerts | Webhook (ORDER_FILLED, POSITION_CLOSED events) | Sprint 2.1 |
+| Daily P&L Report | Cron (market close + 30min) | Sprint 2.2 |
+| Risk Alert Escalation | Webhook (CIRCUIT_BREAKER_FIRED) | Sprint 2.2 |
+| IBKR Health Monitor | Cron (1min during market hours) | Sprint 2.1 |
+
+**Integration:** OptiMind publishes events via HTTP POST to n8n webhook endpoints. n8n workflows are read-only — they consume events and produce notifications/reports but never modify trading state.
+
+---
+
 ## Dependencies
 
 - Completed Phase 1 artifacts.
 - Reliable IBKR paper connectivity and data feed.
+- n8n running locally with Anthropic credential configured (for Claude-powered report formatting).
 
 ## Out of Scope
 
