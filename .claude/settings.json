@@ -12,24 +12,22 @@
       "Bash(.venv/Scripts/python.exe -m pytest tests/ -v)",
       "Read(//c/Users/lwald/AppData/Roaming/Claude/**)",
       "Read(//c/Users/lwald/**)",
-      "Bash(python -m json.tool:*)",
-      "Bash(# The IDE opened a file with a strange path containing \"\"mcpServer.mcp.config.usrlocal.microsoftdocs\"\" # This looks like a VSCode MCP config file. Let me find it. find \"\"/c/Users/lwald/\"\" -name \"\"*.mcp.json\"\")",
-      "Bash(# The IDE opened file is \"\"mcpServer.mcp.config.usrlocal.microsoftdocs\\\\mcp\"\" - this looks like # a VSCode MCP config path. In VSCode, MCP servers for Claude extension are in: cat \"\"/c/Users/lwald/AppData/Roaming/Code/User/globalStorage/anthropic.claude-dev/settings/claude_mcp_settings.json\"\")",
-      "Bash(.venv/Scripts/lean data download --help)"
+      "Bash(python -m json.tool:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(rm -rf $HOME:*)",
+      "Bash(rm -rf C::*)",
+      "Bash(rm -rf .:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard origin:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(chmod -R 777:*)"
     ]
   },
   "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/session-end-commit.js",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "compact",
@@ -37,6 +35,18 @@
           {
             "type": "command",
             "command": "node .claude/hooks/compact-reorient.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pr-pipeline-trigger.js",
             "timeout": 10
           }
         ]
