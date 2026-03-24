@@ -1,16 +1,11 @@
 # CLAUDE.md - Project Instructions
 
-> Claude reads this file automatically at session start.
-> Keep this file concise and authoritative.
-> Use `claude --continue` to restore the previous session's full message history.
+Claude reads this file automatically at session start.
+Keep this file concise and authoritative.
 
-## Required Reading Order
+## Session Orientation
 
-1. `PROGRESS.md`
-2. `docs/VALIDATION_GATES.md`
-3. `DECISIONS.md`
-4. `docs/PROJECT_STRATEGY.md` (canonical plan and consistency matrix)
-5. On-demand: architecture and phase docs
+At session start: check `git status`, read `DECISIONS.md` for architectural context, read `docs/VALIDATION_GATES.md` for gate state. Use `claude --continue` to restore prior session history.
 
 ## Canonical Project Identity
 
@@ -30,9 +25,13 @@
 
 ## Autonomy Boundaries
 
-**CAN autonomously:** create/edit files, install packages, run builds/tests, create branches and PRs, scaffold code, add tests and scripts.
+**CAN autonomously:** create/edit files, install packages, run builds/tests, create branches and PRs, scaffold code, add tests and scripts, install and use CLI tools, query cloud services and APIs.
 
-**MUST ask human before:** changing mode to live, executing live trades, merging PRs, changing hard risk limits, creating GitHub repos, signing up for services, providing API keys, approving major architectural changes.
+**Only when explicitly asked:** Merge PRs.
+
+**MUST ask human before:** changing mode to live, executing live trades, changing hard risk limits, creating GitHub repos, signing up for services, providing API keys, approving major architectural changes.
+
+**Tool-first rule:** See `.claude/rules/tool-first.md` — never ask the user to do something you can do with a tool.
 
 ## Financial Safety Rules
 
@@ -46,15 +45,12 @@
 - CLAUDE.md target is ~65 lines. See `docs/PROJECT_STRATEGY.md` §Context Budget before adding content here.
 - `docs/PROJECT_STRATEGY.md` is canonical strategy/roadmap.
 - `docs/strategy-roadmap.md` is non-canonical pointer only.
-- Use `DECISIONS.md` for all significant architecture/process changes. It is the durable record — if a session decision matters beyond the 3-note rolling window in `PROGRESS.md`, add an ADR before running `/handoff`.
-- Use `PROGRESS.md` for durable state and gate scoreboard.
+- Use `DECISIONS.md` for all significant architecture/process changes. It is the durable record — add an ADR before running `/aam-handoff` when a decision matters beyond the current session.
+- Gate scoreboard and next priorities are tracked in `DECISIONS.md` (Project State Snapshot section).
 
 ## Git and Branch Policy
 
 - Never commit directly to main — always use feature branches.
 - Branch naming: `feature/`, `fix/`, `chore/` prefix.
 - All changes via PR — Claude creates, human reviews and merges.
-- Feature branches auto-committed at session end (hook: `.claude/hooks/session-end-commit.js`).
-- `main` is excluded from auto-commit — human commits main manually. This applies to docs-only changes.
-
-@SPRINT.md
+- See `.claude/rules/git-workflow.md` for commit and branch discipline.
