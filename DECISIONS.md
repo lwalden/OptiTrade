@@ -155,3 +155,33 @@ Record significant decisions to prevent re-debating and documentation drift.
 **Decision:** Implement Sprint 1.1 (Python scaffold and IBKR connection) before Sprint 1.0 (LEAN backtest), despite the phase doc listing 1.0 first.
 **Rationale:** Building the Python runtime scaffold first reduces the risk of misaligned assumptions in the LEAN backtest. Understanding IBKR connectivity, data models, and configuration structure before writing C# backtest logic leads to better parity between backtest and runtime. Sprint numbers reflect dependency priority (backtest viability is the strategic prerequisite), not implementation order.
 **Alternatives:** strict sequential order matching sprint numbers; skipping scaffold until after backtest viability confirmed.
+
+---
+
+## Project State Snapshot | 2026-02-21 | Migrated from PROGRESS.md
+
+### Phase Gate Scoreboard
+
+| Gate | Status | Notes |
+|---|---|---|
+| Phase 1 Strategy Viability | in_progress | YAML configs done; LEAN backtest and gate evaluator not yet implemented |
+| Phase 2 Execution and Risk | pending | blocked on Phase 1 gate |
+| Phase 3 AI Value | pending | blocked on Phase 2 gate |
+| Phase 4 Live Readiness | pending | blocked on Phase 1-3 gates |
+
+### Next Steps (as of last active session)
+
+1. Review and merge PR #8 (`feature/sprint-1.0-config-yaml`) — YAML configs for Sprint 1.0
+2. Implement `scripts/generate_lean_config.py` — reads `optimind/config/strategies.yaml`, emits `backtests/lean/Config/StrategyConstants.cs`, prints SHA256 `parameter_hash`
+3. Implement `scripts/evaluate_phase1_gate.py` — validates `backtests/lean/results/phase1_baseline.json` against Phase 1 gate criteria
+4. Scaffold `backtests/lean/` C# LEAN algorithm structure (Algorithm/, Config/, lean.json)
+
+---
+
+## Known Debt
+
+| ID | Description | Impact | Logged |
+|---|---|---|---|
+| KD-001 | `scripts/generate_lean_config.py` not implemented | Blocks Phase 1 gate evaluation | 2026-02-21 |
+| KD-002 | `scripts/evaluate_phase1_gate.py` not implemented | Blocks Phase 1 gate pass | 2026-02-21 |
+| KD-003 | LEAN backtest scaffold not yet built | Blocks backtest viability validation | 2026-02-21 |
