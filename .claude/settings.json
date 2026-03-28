@@ -1,4 +1,8 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "bash .claude/scripts/context-monitor.sh"
+  },
   "permissions": {
     "allow": [
       "Bash(uv pip install:*)",
@@ -25,32 +29,6 @@
       "Bash(git reset --hard origin:*)",
       "Bash(git clean -fd:*)",
       "Bash(chmod -R 777:*)"
-    ]
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/compact-reorient.js",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pr-pipeline-trigger.js",
-            "timeout": 10
-          }
-        ]
-      }
     ]
   }
 }
