@@ -30,5 +30,13 @@
       "Bash(git clean -fd:*)",
       "Bash(chmod -R 777:*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "bash .claude/scripts/context-cycle-hook.sh"
+      }
+    ]
   }
 }
