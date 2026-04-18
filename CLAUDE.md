@@ -33,6 +33,11 @@ At session start: check `git status`, read `DECISIONS.md` for architectural cont
 
 **Tool-first rule:** See `.claude/rules/tool-first.md` — never ask the user to do something you can do with a tool.
 
+## Verification-First Development
+
+- Write failing tests first, then implement
+- Run the full test suite before every commit
+
 ## Financial Safety Rules
 
 - Default mode is paper.
@@ -42,6 +47,7 @@ At session start: check `git status`, read `DECISIONS.md` for architectural cont
 
 ## Documentation Rules
 
+- Use `/context` for real-time context usage and optimization tips.
 - CLAUDE.md target is ~65 lines. See `docs/PROJECT_STRATEGY.md` §Context Budget before adding content here.
 - `docs/PROJECT_STRATEGY.md` is canonical strategy/roadmap.
 - `docs/strategy-roadmap.md` is non-canonical pointer only.
